@@ -4,8 +4,14 @@ package com.abad.lab02carritokotlin
 abstract class Producto(
     val nombre: String,
     val precio: Double,
-    var cantidad: Int
+    cantidadInicial: Int
 ) {
+    // ENCAPSULAMIENTO: cantidad con validación
+    var cantidad: Int = if (cantidadInicial >= 1) cantidadInicial else 1
+        set(value) {
+            if (value >= 1) field = value
+        }
+
     abstract fun calcularImporte(): Double
 }
 
@@ -15,9 +21,8 @@ class Electronico(
     precio: Double,
     cantidad: Int
 ) : Producto(nombre, precio, cantidad) {
-
     override fun calcularImporte(): Double {
-        val cargoGarantia = 0.05 // 5% de cargo adicional por garantía técnica
+        val cargoGarantia = 0.05
         val subtotal = precio * cantidad
         return subtotal + (subtotal * cargoGarantia)
     }
@@ -31,13 +36,28 @@ class Accesorio(
 ) : Producto(nombre, precio, cantidad) {
     override fun calcularImporte(): Double {
         val subtotal = precio * cantidad
-        // 10% de descuento si se compran más de 2 unidades del mismo accesorio
-        return if (cantidad > 2) {
-            subtotal * 0.90
-        } else {
-            subtotal
-        }
+        return if (cantidad > 2) subtotal * 0.90 else subtotal
     }
+}
+
+// 3. ENCAPSULAMIENTO: Carrito controla el acceso a la lista de productos
+class Carrito(val cliente: String) {
+    private val items = mutableListOf<Producto>()
+
+    fun agregarProducto(producto: Producto) {
+        items.add(producto)
+        println("Producto agregado: ${producto.nombre}")
+    }
+
+    fun eliminarProducto(nombre: String): Boolean {
+        return items.removeIf { it.nombre.equals(nombre, ignoreCase = true) }
+    }
+
+    fun listarProductos(): List<Producto> {
+        return items.toList()
+    }
+
+    fun totalItems(): Int = items.size
 }
 
 fun calcularSubtotal(productos: List<Producto>): Double {
@@ -88,24 +108,20 @@ fun main() {
     println("=========================================")
 
     val nombreCliente = "Luis Abad"
-    val carrito = mutableListOf<Producto>()
+    val miCarrito = Carrito(nombreCliente)
     println("Cliente: $nombreCliente")
     println()
 
-    carrito.add(Electronico("Laptop HP", 2500.0, 1))
-    carrito.add(Accesorio("Mouse Logitech", 45.5, 2))
-    carrito.add(Accesorio("Teclado Redragon", 120.0, 3))
-    carrito.add(Electronico("Monitor msi", 650.0, 1))
+    miCarrito.agregarProducto(Electronico("Laptop HP", 2500.0, 1))
+    miCarrito.agregarProducto(Accesorio("Mouse Logitech", 45.5, 2))
+    miCarrito.agregarProducto(Accesorio("Teclado Redragon", 120.0, 3))
+    miCarrito.agregarProducto(Electronico("Monitor msi", 650.0, 1))
 
-    for (producto in carrito) {
-        println("Producto agregado: ${producto.nombre}")
-    }
-
-    mostrarDetalle(carrito)
-    println("Cantidad de productos: ${carrito.size}")
+    mostrarDetalle(miCarrito.listarProductos())
+    println("Cantidad de productos: ${miCarrito.totalItems()}")
     println()
 
-    val subtotal = calcularSubtotal(carrito)
+    val subtotal = calcularSubtotal(miCarrito.listarProductos())
     val igv = calcularIGV(subtotal)
     val total = calcularTotal(subtotal, igv)
 
@@ -113,7 +129,7 @@ fun main() {
     println(String.format("IGV (18%%): S/ %.2f", igv))
     println(String.format("TOTAL A PAGAR: S/ %.2f", total))
 
-    val masCaro = carrito.maxByOrNull { it.precio }
+    val masCaro = miCarrito.listarProductos().maxByOrNull { it.precio }
     if (masCaro != null) {
         println("Producto mas caro: ${masCaro.nombre} " +
                 String.format("(S/ %.2f)", masCaro.precio))
@@ -125,7 +141,7 @@ fun main() {
     println(String.format("TOTAL CON DESCUENTO: S/ %.2f", totalConDescuento))
 
     println()
-    val productoBuscado = buscarProducto(carrito, "Laptop HP")
+    val productoBuscado = buscarProducto(miCarrito.listarProductos(), "Laptop HP")
     if (productoBuscado != null) {
         println("Producto encontrado: ${productoBuscado.nombre} - S/ ${productoBuscado.precio}")
     } else {
@@ -134,13 +150,13 @@ fun main() {
 
     println()
     println("Eliminando producto: Mouse Logitech")
-    carrito.removeIf { it.nombre == "Mouse Logitech" }
+    miCarrito.eliminarProducto("Mouse Logitech")
 
-    val nuevoSubtotal = calcularSubtotal(carrito)
+    val nuevoSubtotal = calcularSubtotal(miCarrito.listarProductos())
     val nuevoIgv = calcularIGV(nuevoSubtotal)
     val nuevoTotal = calcularTotal(nuevoSubtotal, nuevoIgv)
 
-    mostrarDetalle(carrito)
+    mostrarDetalle(miCarrito.listarProductos())
     println(String.format("Nuevo Subtotal: S/ %.2f", nuevoSubtotal))
     println(String.format("Nuevo IGV: S/ %.2f", nuevoIgv))
     println(String.format("Nuevo TOTAL: S/ %.2f", nuevoTotal))
