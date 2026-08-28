@@ -40,7 +40,7 @@ class Accesorio(
     }
 }
 
-// 3. ENCAPSULAMIENTO: Carrito controla el acceso a la lista de productos
+// 3. ENCAPSULAMIENTO: Carrito controla el acceso y centraliza la lógica de cálculo
 class Carrito(val cliente: String) {
     private val items = mutableListOf<Producto>()
 
@@ -53,12 +53,51 @@ class Carrito(val cliente: String) {
         return items.removeIf { it.nombre.equals(nombre, ignoreCase = true) }
     }
 
+    fun buscarProducto(nombre: String): Producto? {
+        return items.find { it.nombre.equals(nombre, ignoreCase = true) }
+    }
+
+    fun obtenerProductoMasCaro(): Producto? {
+        return items.maxByOrNull { it.precio }
+    }
+
     fun listarProductos(): List<Producto> {
         return items.toList()
     }
 
+    // LÓGICA CENTRALIZADA (Encapsulamiento de cálculos)
+    fun calcularSubtotal(): Double {
+        // POLIMORFISMO: cada producto calcula su propio importe
+        return items.sumOf { it.calcularImporte() }
+    }
+
+    fun calcularIGV(): Double = calcularSubtotal() * 0.18
+    fun calcularTotal(): Double = calcularSubtotal() + calcularIGV()
+
+    fun calcularDescuento(): Double {
+        val total = calcularTotal()
+        return when {
+            total > 5000 -> total * 0.10
+            total > 3000 -> total * 0.05
+            else -> 0.0
+        }
+    }
+
+    fun calcularTotalFinal(): Double = calcularTotal() - calcularDescuento()
+
+    fun mostrarDetalle() {
+        println("--------- DETALLE DEL CARRITO ---------")
+        items.forEachIndexed { index, p ->
+            println(String.format("%d. %-20s x%d S/ %8.2f",
+                index + 1, p.nombre, p.cantidad, p.calcularImporte()))
+        }
+        println("---------------------------------------")
+    }
+
     fun totalItems(): Int = items.size
 }
+
+// --- Funciones globales anteriores: se mantienen por ahora, se retiran en el Paso 4 ---
 
 fun calcularSubtotal(productos: List<Producto>): Double {
     var subtotal = 0.0
