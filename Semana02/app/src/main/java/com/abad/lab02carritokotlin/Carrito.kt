@@ -1,10 +1,44 @@
 package com.abad.lab02carritokotlin
 
-data class Producto(
+// 1. ABSTRACCIÓN: Clase base con contrato para cálculo de importe
+abstract class Producto(
     val nombre: String,
     val precio: Double,
     var cantidad: Int
-)
+) {
+    abstract fun calcularImporte(): Double
+}
+
+// 2. HERENCIA + POLIMORFISMO: Electrónico con cargo por garantía
+class Electronico(
+    nombre: String,
+    precio: Double,
+    cantidad: Int
+) : Producto(nombre, precio, cantidad) {
+
+    override fun calcularImporte(): Double {
+        val cargoGarantia = 0.05 // 5% de cargo adicional por garantía técnica
+        val subtotal = precio * cantidad
+        return subtotal + (subtotal * cargoGarantia)
+    }
+}
+
+// 2. HERENCIA + POLIMORFISMO: Accesorio con descuento por volumen
+class Accesorio(
+    nombre: String,
+    precio: Double,
+    cantidad: Int
+) : Producto(nombre, precio, cantidad) {
+    override fun calcularImporte(): Double {
+        val subtotal = precio * cantidad
+        // 10% de descuento si se compran más de 2 unidades del mismo accesorio
+        return if (cantidad > 2) {
+            subtotal * 0.90
+        } else {
+            subtotal
+        }
+    }
+}
 
 fun calcularSubtotal(productos: List<Producto>): Double {
     var subtotal = 0.0
@@ -39,7 +73,7 @@ fun mostrarDetalle(productos: List<Producto>) {
 fun calcularDescuento(total: Double): Double {
     return when {
         total > 5000 -> total * 0.10
-        total > 3000 -> total *0.05
+        total > 3000 -> total * 0.05
         else -> 0.0
     }
 }
@@ -58,21 +92,23 @@ fun main() {
     println("Cliente: $nombreCliente")
     println()
 
-    carrito.add(Producto("Laptop HP", 2500.0, 1))
-    carrito.add(Producto("Mouse Logitech", 45.5, 1))
-    carrito.add(Producto("Teclado Redragon", 120.0, 3))
-    carrito.add(Producto("Monitor msi", 650.0, 1))
+    carrito.add(Electronico("Laptop HP", 2500.0, 1))
+    carrito.add(Accesorio("Mouse Logitech", 45.5, 2))
+    carrito.add(Accesorio("Teclado Redragon", 120.0, 3))
+    carrito.add(Electronico("Monitor msi", 650.0, 1))
 
     for (producto in carrito) {
         println("Producto agregado: ${producto.nombre}")
     }
 
-    val subtotal = calcularSubtotal(carrito)
-    val igv = calcularIGV(subtotal)
-    val total = calcularTotal(subtotal, igv)
     mostrarDetalle(carrito)
     println("Cantidad de productos: ${carrito.size}")
     println()
+
+    val subtotal = calcularSubtotal(carrito)
+    val igv = calcularIGV(subtotal)
+    val total = calcularTotal(subtotal, igv)
+
     println(String.format("Subtotal: S/ %.2f", subtotal))
     println(String.format("IGV (18%%): S/ %.2f", igv))
     println(String.format("TOTAL A PAGAR: S/ %.2f", total))
