@@ -70,7 +70,40 @@ fun main() {
 
         val vehiculoActual = Vehiculo(nombre, placa, tipo, horasIngresadas, tarifaBase, esFrecuente)
         listaVehiculos.add(vehiculoActual)
-        println("Vehículo registrado: ${vehiculoActual.nombreCliente} - ${vehiculoActual.placa}")
+
+        // Cálculo y formato de salida por vehículo
+        println("\nTarifa basica \"${vehiculoActual.nombreCliente}\" - \"${vehiculoActual.placa}\"")
+        println("hora     tarifa     recargo     importe")
+
+        var subtotalVehiculo = 0.0
+
+        for (h in 1..vehiculoActual.horas) {
+            var porcentajeTexto = "0%"
+            var recargoMonto = 0.0
+
+            if (h == 3 || h == 4) {
+                porcentajeTexto = "20%"
+                recargoMonto = tarifaBase * 0.20
+            } else if (h >= 5) {
+                porcentajeTexto = "50%"
+                recargoMonto = tarifaBase * 0.50
+            }
+
+            val importeHora = tarifaBase + recargoMonto
+            subtotalVehiculo = subtotalVehiculo + importeHora
+
+            println("%-8d %-10.2f %-11s %-10.2f".format(h, tarifaBase, porcentajeTexto, importeHora))
+        }
+
+        var totalConDescuento = subtotalVehiculo
+        if (esFrecuente) {
+            val descuento = subtotalVehiculo * 0.10
+            totalConDescuento = subtotalVehiculo - descuento
+            println("                    Subtotal:   %.2f".format(subtotalVehiculo))
+            println("                    Desc. 10%%:  -%.2f".format(descuento))
+        }
+
+        println("                    total:      %.2f soles".format(totalConDescuento))
     }
 
     println("\nTotal de vehículos registrados: ${listaVehiculos.size}")
