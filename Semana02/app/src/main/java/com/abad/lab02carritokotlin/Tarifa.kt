@@ -23,6 +23,11 @@ fun main() {
     }
 
     val listaVehiculos = mutableListOf<Vehiculo>()
+    var contadorMotos = 0
+    var contadorAutos = 0
+    var contadorCamionetas = 0
+    var acumuladoHoras = 0
+    var gananciaTotalDia = 0.0
 
     for (i in 1..cantidadTotal) {
         println("\n--- REGISTRO VEHÍCULO #$i ---")
@@ -43,12 +48,15 @@ fun main() {
             if (tipo == "moto") {
                 tarifaBase = 2.0
                 tipoValido = true
+                contadorMotos = contadorMotos + 1
             } else if (tipo == "auto") {
                 tarifaBase = 4.0
                 tipoValido = true
+                contadorAutos = contadorAutos + 1
             } else if (tipo == "camioneta") {
                 tarifaBase = 10.0
                 tipoValido = true
+                contadorCamionetas = contadorCamionetas + 1
             } else {
                 println("Error: Tipo no válido.")
             }
@@ -71,7 +79,6 @@ fun main() {
         val vehiculoActual = Vehiculo(nombre, placa, tipo, horasIngresadas, tarifaBase, esFrecuente)
         listaVehiculos.add(vehiculoActual)
 
-        // Cálculo y formato de salida por vehículo
         println("\nTarifa basica \"${vehiculoActual.nombreCliente}\" - \"${vehiculoActual.placa}\"")
         println("hora     tarifa     recargo     importe")
 
@@ -104,7 +111,19 @@ fun main() {
         }
 
         println("                    total:      %.2f soles".format(totalConDescuento))
+
+        acumuladoHoras = acumuladoHoras + horasIngresadas
+        gananciaTotalDia = gananciaTotalDia + totalConDescuento
     }
 
-    println("\nTotal de vehículos registrados: ${listaVehiculos.size}")
+    println("\n==========================================")
+    println("RESUMEN DEL DÍA")
+    println("==========================================")
+    println("Cantidad total de vehículos: ${listaVehiculos.size}")
+    println(" - Motos: $contadorMotos")
+    println(" - Autos: $contadorAutos")
+    println(" - Camionetas: $contadorCamionetas")
+    println("Cantidad total de horas acumuladas: $acumuladoHoras")
+    println("Ganancia total del día: S/. %.2f".format(gananciaTotalDia))
+    println("==========================================")
 }
