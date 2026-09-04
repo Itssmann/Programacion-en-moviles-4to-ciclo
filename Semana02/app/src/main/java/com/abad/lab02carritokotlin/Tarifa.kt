@@ -12,26 +12,29 @@ class Vehiculo(
 fun main() {
     println("--- SISTEMA DE ESTACIONAMIENTO ---")
 
-    print("Ingrese la cantidad de vehículos a registrar: ")
-    var inputCantidad = readln()
-    var cantidadTotal = inputCantidad.toIntOrNull() ?: 0
+    print("Ingrese el aforo máximo del estacionamiento: ")
+    var inputAforo = readln()
+    var aforoMaximo = inputAforo.toIntOrNull() ?: 0
 
-    while (cantidadTotal <= 0) {
-        print("Por favor, ingrese un número mayor a 0: ")
-        inputCantidad = readln()
-        cantidadTotal = inputCantidad.toIntOrNull() ?: 0
+    while (aforoMaximo <= 0) {
+        print("Por favor, ingrese un aforo mayor a 0: ")
+        inputAforo = readln()
+        aforoMaximo = inputAforo.toIntOrNull() ?: 0
     }
 
     val listaVehiculos = mutableListOf<Vehiculo>()
     var contadorMotos = 0
     var contadorAutos = 0
     var contadorCamionetas = 0
-    var contadorTrailer = 0
+    var contadorTrailers = 0
     var acumuladoHoras = 0
     var gananciaTotalDia = 0.0
 
-    for (i in 1..cantidadTotal) {
-        println("\n--- REGISTRO VEHÍCULO #$i ---")
+    var continuar = "sí"
+
+    while (listaVehiculos.size < aforoMaximo && (continuar == "sí" || continuar == "si")) {
+        val contadorVehiculoActual = listaVehiculos.size + 1
+        println("\n--- REGISTRO VEHÍCULO #$contadorVehiculoActual (Aforo actual: ${listaVehiculos.size}/$aforoMaximo) ---")
 
         print("Nombre del cliente: ")
         val nombre = readln()
@@ -58,11 +61,11 @@ fun main() {
                 tarifaBase = 10.0
                 tipoValido = true
                 contadorCamionetas = contadorCamionetas + 1
-            } else if (tipo == "trailer"){
-                tarifaBase == 20.0
+            } else if (tipo == "trailer") {
+                tarifaBase = 20.0
                 tipoValido = true
-                contadorTrailer = contadorTrailer + 1
-            } else{
+                contadorTrailers = contadorTrailers + 1
+            } else {
                 println("Error: Tipo no válido.")
             }
         }
@@ -93,10 +96,13 @@ fun main() {
             var porcentajeTexto = "0%"
             var recargoMonto = 0.0
 
-            if (h == 3 || h == 4) {
+            if (h in 3..5) {
                 porcentajeTexto = "20%"
                 recargoMonto = tarifaBase * 0.20
-            } else if (h >= 5) {
+            } else if (h in 6..10) {
+                porcentajeTexto = "40%"
+                recargoMonto = tarifaBase * 0.40
+            } else if (h >= 11) {
                 porcentajeTexto = "50%"
                 recargoMonto = tarifaBase * 0.50
             }
@@ -119,16 +125,24 @@ fun main() {
 
         acumuladoHoras = acumuladoHoras + horasIngresadas
         gananciaTotalDia = gananciaTotalDia + totalConDescuento
+
+        if (listaVehiculos.size == aforoMaximo) {
+            println("\n¡El estacionamiento ha alcanzado su aforo máximo!")
+        } else {
+            print("\n¿Desea registrar otro vehículo? (Sí/No): ")
+            continuar = readln().trim().lowercase()
+        }
     }
 
     println("\n==========================================")
     println("RESUMEN DEL DÍA")
     println("==========================================")
-    println("Cantidad total de vehículos: ${listaVehiculos.size}")
+    println("Aforo total del local: $aforoMaximo")
+    println("Cantidad total de vehículos registrados: ${listaVehiculos.size}")
     println(" - Motos: $contadorMotos")
     println(" - Autos: $contadorAutos")
     println(" - Camionetas: $contadorCamionetas")
-    println(" - Trailers: $contadorTrailer")
+    println(" - Trailers: $contadorTrailers")
     println("Cantidad total de horas acumuladas: $acumuladoHoras")
     println("Ganancia total del día: S/. %.2f".format(gananciaTotalDia))
     println("==========================================")
