@@ -71,12 +71,12 @@ fun main() {
         }
 
         var horasIngresadas = 0
-        while (horasIngresadas < 2) {
-            print("Horas estacionado (Mínimo 2): ")
+        while (horasIngresadas < 2 || horasIngresadas > 24) {
+            print("Horas estacionado (Entre 2 y 24): ")
             val inputHoras = readln()
             horasIngresadas = inputHoras.toIntOrNull() ?: 0
-            if (horasIngresadas < 2) {
-                println("Error: No se permite menos de 2 horas.")
+            if (horasIngresadas < 2 || horasIngresadas > 24) {
+                println("Error: El tiempo permitido debe estar entre 2 y 24 horas.")
             }
         }
 
@@ -117,21 +117,18 @@ fun main() {
 
         var montoConDescuentos = subtotalVehiculo
 
-        // 1. Descuento por cliente frecuente (10%)
         if (esFrecuente) {
             val descuentoFrecuente = subtotalVehiculo * 0.10
             montoConDescuentos = montoConDescuentos - descuentoFrecuente
             println("                    Desc. 10%% (Frecuente): -%.2f".format(descuentoFrecuente))
         }
 
-        // 2. Descuento adicional por monto mayor a 500 soles (20%)
         if (subtotalVehiculo > 500) {
             val descuentoMonto = subtotalVehiculo * 0.20
             montoConDescuentos = montoConDescuentos - descuentoMonto
             println("                    Desc. 20%% (>500):       -%.2f".format(descuentoMonto))
         }
 
-        // 3. Impuesto del IGV (18%)
         val igv = montoConDescuentos * 0.18
         val totalFinal = montoConDescuentos + igv
 
