@@ -113,18 +113,33 @@ fun main() {
             println("%-8d %-10.2f %-11s %-10.2f".format(h, tarifaBase, porcentajeTexto, importeHora))
         }
 
-        var totalConDescuento = subtotalVehiculo
+        println("                    Subtotal:   %.2f".format(subtotalVehiculo))
+
+        var montoConDescuentos = subtotalVehiculo
+
+        // 1. Descuento por cliente frecuente (10%)
         if (esFrecuente) {
-            val descuento = subtotalVehiculo * 0.10
-            totalConDescuento = subtotalVehiculo - descuento
-            println("                    Subtotal:   %.2f".format(subtotalVehiculo))
-            println("                    Desc. 10%%:  -%.2f".format(descuento))
+            val descuentoFrecuente = subtotalVehiculo * 0.10
+            montoConDescuentos = montoConDescuentos - descuentoFrecuente
+            println("                    Desc. 10%% (Frecuente): -%.2f".format(descuentoFrecuente))
         }
 
-        println("                    total:      %.2f soles".format(totalConDescuento))
+        // 2. Descuento adicional por monto mayor a 500 soles (20%)
+        if (subtotalVehiculo > 500) {
+            val descuentoMonto = subtotalVehiculo * 0.20
+            montoConDescuentos = montoConDescuentos - descuentoMonto
+            println("                    Desc. 20%% (>500):       -%.2f".format(descuentoMonto))
+        }
+
+        // 3. Impuesto del IGV (18%)
+        val igv = montoConDescuentos * 0.18
+        val totalFinal = montoConDescuentos + igv
+
+        println("                    IGV (18%%):               +%.2f".format(igv))
+        println("                    Total:                   %.2f soles".format(totalFinal))
 
         acumuladoHoras = acumuladoHoras + horasIngresadas
-        gananciaTotalDia = gananciaTotalDia + totalConDescuento
+        gananciaTotalDia = gananciaTotalDia + totalFinal
 
         if (listaVehiculos.size == aforoMaximo) {
             println("\n¡El estacionamiento ha alcanzado su aforo máximo!")
