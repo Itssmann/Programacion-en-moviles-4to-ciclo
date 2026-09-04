@@ -30,9 +30,9 @@ fun main() {
     var acumuladoHoras = 0
     var gananciaTotalDia = 0.0
 
-    var continuar = "sí"
+    var continuar = "si"
 
-    while (listaVehiculos.size < aforoMaximo && (continuar == "sí" || continuar == "si")) {
+    while (listaVehiculos.size < aforoMaximo && continuar == "si") {
         val contadorVehiculoActual = listaVehiculos.size + 1
         println("\n--- REGISTRO VEHÍCULO #$contadorVehiculoActual (Aforo actual: ${listaVehiculos.size}/$aforoMaximo) ---")
 
@@ -87,7 +87,7 @@ fun main() {
         val vehiculoActual = Vehiculo(nombre, placa, tipo, horasIngresadas, tarifaBase, esFrecuente)
         listaVehiculos.add(vehiculoActual)
 
-        println("\nTarifa basica \"${vehiculoActual.nombreCliente}\" - \"${vehiculoActual.placa}\"")
+        println("\nTarifa básica \"${vehiculoActual.nombreCliente}\" - \"${vehiculoActual.placa}\"")
         println("hora     tarifa     recargo     importe")
 
         var subtotalVehiculo = 0.0
@@ -140,9 +140,33 @@ fun main() {
 
         if (listaVehiculos.size == aforoMaximo) {
             println("\n¡El estacionamiento ha alcanzado su aforo máximo!")
+            continuar = "no"
         } else {
             print("\n¿Desea registrar otro vehículo? (Sí/No): ")
-            continuar = readln().trim().lowercase()
+            val respuesta = readln().trim().lowercase()
+
+            if (respuesta == "no" || respuesta == "n") {
+                var menuPausa = true
+                while (menuPausa) {
+                    println("\n--- REGISTRO PAUSADO ---")
+                    println("1. Seguir registrando (Siguiente vehículo)")
+                    println("2. Ver resumen del día y finalizar")
+                    print("Seleccione una opción (1 o 2): ")
+                    val opcionPausa = readln().trim()
+
+                    if (opcionPausa == "1") {
+                        continuar = "si"
+                        menuPausa = false
+                    } else if (opcionPausa == "2") {
+                        continuar = "no"
+                        menuPausa = false
+                    } else {
+                        println("Error: Opción inválida. Elija 1 o 2.")
+                    }
+                }
+            } else {
+                continuar = "si"
+            }
         }
     }
 
