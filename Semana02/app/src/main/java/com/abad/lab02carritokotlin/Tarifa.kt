@@ -1,6 +1,6 @@
 package com.abad.lab02carritokotlin
 
-data class Vehiculo(
+class Vehiculo(
     val nombreCliente: String,
     val placa: String,
     val tipo: String,
@@ -26,6 +26,7 @@ fun main() {
     var contadorMotos = 0
     var contadorAutos = 0
     var contadorCamionetas = 0
+    var contadorTrailer = 0
     var acumuladoHoras = 0
     var gananciaTotalDia = 0.0
 
@@ -42,7 +43,7 @@ fun main() {
         var tarifaBase = 0.0
         var tipoValido = false
         while (!tipoValido) {
-            print("Tipo (Moto, Auto, Camioneta): ")
+            print("Tipo (Moto, Auto, Camioneta, Trailer): ")
             tipo = readln().trim().lowercase()
 
             if (tipo == "moto") {
@@ -57,7 +58,11 @@ fun main() {
                 tarifaBase = 10.0
                 tipoValido = true
                 contadorCamionetas = contadorCamionetas + 1
-            } else {
+            } else if (tipo == "trailer"){
+                tarifaBase == 20.0
+                tipoValido = true
+                contadorTrailer = contadorTrailer + 1
+            } else{
                 println("Error: Tipo no válido.")
             }
         }
@@ -123,6 +128,7 @@ fun main() {
     println(" - Motos: $contadorMotos")
     println(" - Autos: $contadorAutos")
     println(" - Camionetas: $contadorCamionetas")
+    println(" - Trailers: $contadorTrailer")
     println("Cantidad total de horas acumuladas: $acumuladoHoras")
     println("Ganancia total del día: S/. %.2f".format(gananciaTotalDia))
     println("==========================================")
