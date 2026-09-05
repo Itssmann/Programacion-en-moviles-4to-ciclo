@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -124,6 +125,10 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
                     )
                 }
             }
+            Text(
+                "✓ Producto registrado correctamente",
+                color = Color(0xFF2E7D32)
+            )
         }
 
     }
