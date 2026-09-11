@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat.enableEdgeToEdge
 import com.abad.lab03registroproducto.ui.theme.Lab03RegistroProductoTheme
+import androidx.compose.material3.OutlinedButton
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,7 +122,7 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
 
         // 2. Botón LIMPIAR
         Spacer(modifier = Modifier.height(8.dp))
-        androidx.compose.material3.OutlinedButton(
+        OutlinedButton(
             onClick = {
                 nombre = ""
                 precio = ""
