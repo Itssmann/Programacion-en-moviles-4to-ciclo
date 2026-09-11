@@ -55,6 +55,7 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
     var precio by remember { mutableStateOf("") }
     var cantidad by remember { mutableStateOf("") }
     var mostrarResumen by remember { mutableStateOf(false) }
+    var mensajeError by remember { mutableStateOf("") } // Estado para el mensaje de error
 
     Column(
         modifier = modifier
@@ -71,6 +72,7 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.outline
         )
         Spacer(modifier = Modifier.height(24.dp))
+
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it },
@@ -78,9 +80,9 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
+
         Row(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
-                // TODO: estado precio, label "Precio (S/)"
                 value = precio,
                 onValueChange = { precio = it },
                 label = { Text("Precio (S/)") },
@@ -88,7 +90,6 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             OutlinedTextField(
-                // TODO: estado cantidad, label "Cantidad"
                 value = cantidad,
                 onValueChange = { cantidad = it },
                 label = { Text("Cantidad") },
@@ -96,29 +97,71 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
+
+        // 1. Botón AGREGAR con Validación
         Button(
-            onClick = { mostrarResumen = true },
+            onClick = {
+                val faltantes = mutableListOf<String>()
+                if (nombre.isBlank()) faltantes.add("nombre")
+                if (precio.isBlank()) faltantes.add("precio")
+                if (cantidad.isBlank()) faltantes.add("cantidad")
+
+                if (faltantes.isNotEmpty()) {
+                    mensajeError = "Error: Falta completar " + faltantes.joinToString(", ")
+                    mostrarResumen = false
+                } else {
+                    mensajeError = ""
+                    mostrarResumen = true
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("AGREGAR PRODUCTO")
         }
+
+        // 2. Botón LIMPIAR
+        Spacer(modifier = Modifier.height(8.dp))
+        androidx.compose.material3.OutlinedButton(
+            onClick = {
+                nombre = ""
+                precio = ""
+                cantidad = ""
+                mostrarResumen = false
+                mensajeError = ""
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("LIMPIAR")
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Mensaje de Error en Rojo
+        if (mensajeError.isNotEmpty()) {
+            Text(
+                text = mensajeError,
+                color = Color.Red,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // Resumen (Card) - Se muestra solo si no hay error
         if (mostrarResumen) {
             val precioNum = precio.toDoubleOrNull() ?: 0.0
             val cantidadNum = cantidad.toIntOrNull() ?: 0
-            val importe = precioNum * cantidadNum // TODO: calcula precio x cantidad
+            val importe = precioNum * cantidadNum
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(nombre, style = MaterialTheme.typography.titleLarge)
                     Text("Precio: S/ " + String.format("%.2f", precioNum))
-                    // TODO: Text de cantidad
                     Text("Cantidad: " + cantidadNum)
-                    // TODO: Text de importe en negrita y color primario
                     Text(
                         "Importe: S/ " + String.format("%.2f", importe),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -131,6 +174,5 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
                 color = Color(0xFF2E7D32)
             )
         }
-
     }
 }
