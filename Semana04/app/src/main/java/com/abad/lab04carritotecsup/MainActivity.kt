@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.abad.lab04carritotecsup.ui.theme.Lab04CarritoTecsupTheme
@@ -136,9 +137,24 @@ fun TarjetaProducto(producto: Producto, onEliminar: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 // TODO: Text nombre (titleMedium, negrita)
+                Text(
+                    producto.nombre,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
                 // TODO: Text "S/ precio x cantidad" (gris)
+                Text(
+                    "S/${String.format("%.2f", producto.precio)}  x ${producto.cantidad}",
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
             // TODO: Text del importe (precio x cantidad, 2 decimales)
+            Text(
+                "S/ " + String.format("%.2f", producto.precio * producto.cantidad),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
             IconButton(onClick = onEliminar) {
                 Icon(
                     imageVector = Icons.Default.Delete,
