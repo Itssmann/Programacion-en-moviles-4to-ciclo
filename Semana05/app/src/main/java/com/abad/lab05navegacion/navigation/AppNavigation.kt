@@ -1,12 +1,15 @@
 package com.abad.lab05navegacion.navigation
 
-import android.R.attr.type
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.abad.lab05navegacion.screens.DetailScreen
+import com.abad.lab05navegacion.screens.HomeScreen
+import com.abad.lab05navegacion.screens.ListScreen
+import com.abad.lab05navegacion.screens.ProfileScreen
 
 @Composable
 fun AppNavigation() {
@@ -14,20 +17,20 @@ fun AppNavigation() {
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(Screen.Home.route) {
-            // TODO: llamar a HomeScreen(navController)
+            HomeScreen(navController)
         }
         composable(Screen.List.route) {
-            // TODO: llamar a ListScreen(navController)
+            ListScreen(navController)
         }
         composable(
             route = Screen.Detail.route,
             arguments = listOf(navArgument("itemId") { type = NavType.IntType })
         ) { backStackEntry ->
             val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
-            // TODO: llamar a DetailScreen(itemId, navController)
+            DetailScreen(navController, itemId)
         }
         composable(Screen.Profile.route) {
-            // TODO: llamar a ProfileScreen(navController)
+            ProfileScreen(navController)
         }
     }
 }
