@@ -4,23 +4,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,24 +40,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.abad.lab05navegacion.model.UserRepository
-import com.abad.lab05navegacion.navigation.Screen
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun ForgotPasswordScreen(navController: NavController) {
     val primaryPurple = Color(0xFF6A4C93)
     val lightPurple = Color(0xFF8B62C0)
 
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = Modifier
@@ -79,7 +71,7 @@ fun LoginScreen(navController: NavController) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 24.dp),
+                .padding(horizontal = 24.dp),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
@@ -87,11 +79,25 @@ fun LoginScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(28.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                // Top Row with Back Arrow
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = primaryPurple
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
                 // Header Icon
                 Box(
                     modifier = Modifier
@@ -103,8 +109,8 @@ fun LoginScreen(navController: NavController) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.School,
-                        contentDescription = "Portal Académico Logo",
+                        imageVector = Icons.Default.LockReset,
+                        contentDescription = "Recuperar Contraseña",
                         tint = primaryPurple,
                         modifier = Modifier.size(36.dp)
                     )
@@ -114,27 +120,28 @@ fun LoginScreen(navController: NavController) {
 
                 // Title & Subtitle
                 Text(
-                    text = "Portal Académico",
-                    style = MaterialTheme.typography.headlineMedium.copy(
+                    text = "Recuperar Contraseña",
+                    style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = primaryPurple
                     ),
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Accede a tu cuenta",
+                    text = "Ingresa tu correo registrado y te enviaremos las instrucciones de recuperación.",
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.Gray
+                        color = Color.Gray,
+                        lineHeight = 20.sp
                     ),
                     textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Error Message
+                // Feedback Messages
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage!!,
@@ -149,12 +156,27 @@ fun LoginScreen(navController: NavController) {
                     )
                 }
 
-                // Correo Institucional
+                if (successMessage != null) {
+                    Text(
+                        text = successMessage!!,
+                        color = Color(0xFF2E7D32),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                    )
+                }
+
+                // Field Correo
                 OutlinedTextField(
                     value = email,
                     onValueChange = {
                         email = it
                         errorMessage = null
+                        successMessage = null
                     },
                     label = { Text("Correo institucional") },
                     leadingIcon = {
@@ -174,60 +196,17 @@ fun LoginScreen(navController: NavController) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Contraseña
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = {
-                        password = it
-                        errorMessage = null
-                    },
-                    label = { Text("Contraseña") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Contraseña",
-                            tint = primaryPurple
-                        )
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
-                                tint = primaryPurple
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = primaryPurple,
-                        focusedLabelColor = primaryPurple
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botón Iniciar Sesión con Validación
+                // Button Enviar
                 Button(
                     onClick = {
-                        if (email.isBlank() || password.isBlank()) {
-                            errorMessage = "Completa todos los campos"
+                        if (email.isBlank()) {
+                            errorMessage = "Ingresa tu correo institucional"
+                            successMessage = null
                         } else {
-                            val user = UserRepository.validateLogin(email, password)
-                            if (user != null) {
-                                errorMessage = null
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(Screen.Login.route) { inclusive = true }
-                                }
-                            } else {
-                                errorMessage = "Correo o contraseña incorrectos"
-                            }
+                            errorMessage = null
+                            successMessage = "Se ha enviado un enlace de recuperación a ${email.trim()}. Revisa tu bandeja de entrada."
                         }
                     },
                     modifier = Modifier
@@ -237,7 +216,7 @@ fun LoginScreen(navController: NavController) {
                     colors = ButtonDefaults.buttonColors(containerColor = primaryPurple)
                 ) {
                     Text(
-                        text = "INICIAR SESIÓN",
+                        text = "ENVIAR ENLACE",
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
@@ -248,32 +227,13 @@ fun LoginScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Text: Olvidaste tu contraseña -> ForgotPassword
-                TextButton(
-                    onClick = {
-                        navController.navigate(Screen.ForgotPassword.route)
-                    }
-                ) {
+                // Volver al Login
+                TextButton(onClick = { navController.popBackStack() }) {
                     Text(
-                        text = "¿Olvidaste tu contraseña?",
+                        text = "Volver al inicio de sesión",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = primaryPurple,
                             fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                }
-
-                // Text: No tienes cuenta? Regístrate -> Register
-                TextButton(
-                    onClick = {
-                        navController.navigate(Screen.Register.route)
-                    }
-                ) {
-                    Text(
-                        text = "¿No tienes cuenta? Regístrate",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = primaryPurple,
-                            fontWeight = FontWeight.Bold
                         )
                     )
                 }

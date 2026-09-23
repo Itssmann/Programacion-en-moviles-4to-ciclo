@@ -34,12 +34,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.abad.lab05navegacion.model.UserRepository
 import com.abad.lab05navegacion.navigation.Screen
 
 @Composable
 fun HomeScreen(navController: NavController) {
     val primaryPurple = Color(0xFF6A4C93)
     val lightPurple = Color(0xFF8B62C0)
+
+    val userName = UserRepository.currentUser?.name ?: "Invitado"
 
     Box(
         modifier = Modifier
@@ -68,7 +71,7 @@ fun HomeScreen(navController: NavController) {
                     .padding(top = 36.dp)
             ) {
                 Text(
-                    text = "Bienvenido, Luis Abad",
+                    text = "Bienvenido, $userName",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -216,8 +219,9 @@ fun HomeScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
                     .clickable {
+                        UserRepository.logout()
                         navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                     },
                 horizontalArrangement = Arrangement.Center,

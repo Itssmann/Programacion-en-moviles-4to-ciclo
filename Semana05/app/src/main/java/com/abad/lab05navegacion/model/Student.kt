@@ -11,7 +11,7 @@ data class Student(
 )
 
 object StudentRepository {
-    val students = listOf(
+    val students = mutableListOf(
         Student(
             id = 1,
             name = "Juan León",
@@ -61,5 +61,22 @@ object StudentRepository {
 
     fun getStudentById(id: Int): Student {
         return students.find { it.id == id } ?: students.first()
+    }
+
+    fun addStudentFromUser(user: User) {
+        if (students.any { it.email.equals(user.email, ignoreCase = true) }) {
+            return
+        }
+        val newId = (students.maxOfOrNull { it.id } ?: 0) + 1
+        val newStudent = Student(
+            id = newId,
+            name = user.name,
+            carrera = "Diseño y Desarrollo de Software",
+            email = user.email,
+            facultad = "Facultad de Ingeniería y Tecnología",
+            biografia = "Estudiante registrado recientemente en la plataforma del Portal Académico.",
+            avatarBgColorHex = 0xFF6A4C93
+        )
+        students.add(newStudent)
     }
 }

@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.abad.lab05navegacion.model.UserRepository
 import com.abad.lab05navegacion.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,6 +55,11 @@ import com.abad.lab05navegacion.navigation.Screen
 fun ProfileScreen(navController: NavController) {
     val primaryPurple = Color(0xFF6A4C93)
     val lightPurple = Color(0xFF8B62C0)
+
+    val currentUser = UserRepository.currentUser
+    val userName = currentUser?.name ?: "Invitado"
+    val userEmail = currentUser?.email ?: "invitado@tecsup.edu.pe"
+    val userPhone = currentUser?.phone ?: "Sin teléfono registrado"
 
     Scaffold(
         topBar = {
@@ -89,7 +95,7 @@ fun ProfileScreen(navController: NavController) {
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Gradient Box con Foto y Nombre
+            // Header Gradient Box
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -132,7 +138,7 @@ fun ProfileScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = "Luis Pablo Abad",
+                        text = userName,
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -180,7 +186,7 @@ fun ProfileScreen(navController: NavController) {
                     ProfileInfoRow(
                         icon = Icons.Default.Person,
                         label = "Nombre Completo",
-                        value = "Luis Pablo Abad"
+                        value = userName
                     )
 
                     HorizontalDivider(
@@ -191,7 +197,7 @@ fun ProfileScreen(navController: NavController) {
                     ProfileInfoRow(
                         icon = Icons.Default.Email,
                         label = "Correo",
-                        value = "luis.abad@tecsup.edu.pe"
+                        value = userEmail
                     )
 
                     HorizontalDivider(
@@ -202,7 +208,7 @@ fun ProfileScreen(navController: NavController) {
                     ProfileInfoRow(
                         icon = Icons.Default.Phone,
                         label = "Teléfono",
-                        value = "+51 987 654 321"
+                        value = userPhone
                     )
                 }
             }
@@ -255,15 +261,15 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botón / Fila "Cerrar Sesión" en Rojo Claro
+            // Botón Cerrar Sesión
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clickable {
-                        navController.navigate(Screen.Home.route) {
-                            // Limpia el back stack — evita apilar Homes
-                            popUpTo(Screen.Home.route) { inclusive = true }
+                        UserRepository.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
                         }
                     },
                 shape = RoundedCornerShape(16.dp),
