@@ -2,6 +2,7 @@ package com.abad.lab05navegacion.navigation
 
 //Desarrollado por Luis Abad
 sealed class Screen(val route: String) {
+    object Login : Screen("login")
     object Home : Screen("home")
     object List : Screen("list")
     object Profile : Screen("profile")
