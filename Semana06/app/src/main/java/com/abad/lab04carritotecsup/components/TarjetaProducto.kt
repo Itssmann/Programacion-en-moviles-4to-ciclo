@@ -23,6 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.abad.lab04carritotecsup.Producto
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 @Composable
 fun TarjetaProducto(
@@ -63,12 +67,33 @@ fun TarjetaProducto(
             )
 
             Box {
-                IconButton(
-                    onClick = { expanded = true }
-                ) {
+                IconButton(onClick = { expanded = true }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "Opciones del producto"
+                    )
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Favoritos") },
+                        onClick = {
+                            expanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Compartir") },
+                        onClick = {
+                            expanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Reportar") },
+                        onClick = {
+                            expanded = false
+                        }
                     )
                 }
             }
