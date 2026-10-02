@@ -7,8 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Report
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,10 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.abad.lab04carritotecsup.Producto
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 
 @Composable
 fun TarjetaProducto(
@@ -44,6 +46,7 @@ fun TarjetaProducto(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -66,38 +69,65 @@ fun TarjetaProducto(
                 color = MaterialTheme.colorScheme.primary
             )
 
+            // Menú contextual del producto
             Box {
-                IconButton(onClick = { expanded = true }) {
+
+                IconButton(
+                    onClick = { expanded = true }
+                ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "Opciones del producto"
                     )
                 }
+
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
+
                     DropdownMenuItem(
                         text = { Text("Favoritos") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = null
+                            )
+                        },
                         onClick = {
                             expanded = false
                         }
                     )
+
+                    HorizontalDivider()
+
                     DropdownMenuItem(
                         text = { Text("Compartir") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null
+                            )
+                        },
                         onClick = {
                             expanded = false
                         }
                     )
+                    HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text("Reportar") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Report,
+                                contentDescription = null
+                            )
+                        },
                         onClick = {
                             expanded = false
                         }
                     )
                 }
             }
-
             IconButton(
                 onClick = onEliminar
             ) {
