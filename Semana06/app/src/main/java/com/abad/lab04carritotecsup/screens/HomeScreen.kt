@@ -35,7 +35,7 @@ fun HomeScreen() {
         )
 
         Text(
-            text = "Productos destacados",
+            text = "Mas vendidos",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(vertical = 16.dp)
         )
