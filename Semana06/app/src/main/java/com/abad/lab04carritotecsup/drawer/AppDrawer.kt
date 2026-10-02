@@ -20,8 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AppDrawer() {
-
+fun AppDrawer(
+    rutaActual: String,
+    onNavigate: (String) -> Unit
+) {
     ModalDrawerSheet {
 
         Column(
@@ -31,60 +33,38 @@ fun AppDrawer() {
                 text = "TECSUP Store",
                 fontWeight = FontWeight.Bold
             )
-
-            Text(text = "Menú principal")
+            Text("Menú principal")
         }
 
         HorizontalDivider()
-
         Spacer(modifier = Modifier.height(8.dp))
 
         NavigationDrawerItem(
             label = { Text("Inicio") },
-            selected = true,
-            icon = {
-                Icon(
-                    Icons.Default.Home,
-                    contentDescription = "Inicio"
-                )
-            },
-            onClick = { }
+            selected = rutaActual == "home",
+            icon = { Icon(Icons.Default.Home, contentDescription = null) },
+            onClick = { onNavigate("home") }
         )
 
         NavigationDrawerItem(
             label = { Text("Mis pedidos") },
-            selected = false,
-            icon = {
-                Icon(
-                    Icons.Default.ShoppingCart,
-                    contentDescription = "Mis pedidos"
-                )
-            },
-            onClick = { }
+            selected = rutaActual == "pedidos",
+            icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
+            onClick = { onNavigate("pedidos") }
         )
 
         NavigationDrawerItem(
             label = { Text("Favoritos") },
-            selected = false,
-            icon = {
-                Icon(
-                    Icons.Default.Favorite,
-                    contentDescription = "Favoritos"
-                )
-            },
-            onClick = { }
+            selected = rutaActual == "favoritos",
+            icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
+            onClick = { onNavigate("favoritos") }
         )
 
         NavigationDrawerItem(
             label = { Text("Perfil") },
-            selected = false,
-            icon = {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Perfil"
-                )
-            },
-            onClick = { }
+            selected = rutaActual == "perfil",
+            icon = { Icon(Icons.Default.Person, contentDescription = null) },
+            onClick = { onNavigate("perfil") }
         )
     }
 }
