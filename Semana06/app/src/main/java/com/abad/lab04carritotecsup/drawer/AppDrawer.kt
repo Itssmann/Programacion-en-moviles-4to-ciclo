@@ -15,6 +15,7 @@ import com.abad.lab04carritotecsup.navigation.Screen
 @Composable
 fun AppDrawer(
     rutaActual: String,
+    favoritoCount: Int,
     onNavigate: (String) -> Unit
 ) {
     ModalDrawerSheet {
@@ -91,6 +92,13 @@ fun AppDrawer(
             label = { Text("Favoritos") },
             icon = {
                 Icon(Icons.Default.Favorite, contentDescription = null)
+            },
+            badge = {
+                if (favoritoCount > 0) {
+                    Badge {
+                        Text("$favoritoCount")
+                    }
+                }
             },
             selected = rutaActual == Screen.Favoritos.route,
             onClick = {

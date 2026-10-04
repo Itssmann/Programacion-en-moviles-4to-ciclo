@@ -13,6 +13,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.abad.lab04carritotecsup.Producto
 import com.abad.lab04carritotecsup.drawer.AppDrawer
 import com.abad.lab04carritotecsup.screens.FavoritosScreen
 import com.abad.lab04carritotecsup.screens.HomeScreen
@@ -35,6 +38,8 @@ fun AppNavigation() {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val favoritos = remember { mutableStateListOf<Producto>() }
+
     val backStackEntry by navController.currentBackStackEntryAsState()
     val rutaActual = backStackEntry?.destination?.route ?: Screen.Home.route
 
@@ -43,6 +48,7 @@ fun AppNavigation() {
         drawerContent = {
             AppDrawer(
                 rutaActual = rutaActual,
+                favoritoCount = favoritos.size,
                 onNavigate = { ruta ->
                     navController.navigate(ruta) {
                         launchSingleTop = true
@@ -81,7 +87,13 @@ fun AppNavigation() {
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Screen.Home.route) {
-                    HomeScreen()
+                    HomeScreen(
+                        onAgregarFavorito = { producto ->
+                            if (!favoritos.contains(producto)) {
+                                favoritos.add(producto)
+                            }
+                        }
+                    )
                 }
 
                 composable(Screen.Pedidos.route) {
@@ -89,7 +101,12 @@ fun AppNavigation() {
                 }
 
                 composable(Screen.Favoritos.route) {
-                    FavoritosScreen()
+                    FavoritosScreen(
+                        favoritos = favoritos,
+                        onEliminarFavorito = { producto ->
+                            favoritos.remove(producto)
+                        }
+                    )
                 }
 
                 composable(Screen.Perfil.route) {
