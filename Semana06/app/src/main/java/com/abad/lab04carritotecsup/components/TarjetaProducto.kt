@@ -33,7 +33,8 @@ import com.abad.lab04carritotecsup.Producto
 @Composable
 fun TarjetaProducto(
     producto: Producto,
-    onEliminar: () -> Unit
+    onEliminar: () -> Unit,
+    onFavoritoClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -96,6 +97,7 @@ fun TarjetaProducto(
                         },
                         onClick = {
                             expanded = false
+                            onFavoritoClick()
                         }
                     )
 

@@ -15,7 +15,9 @@ import com.abad.lab04carritotecsup.Producto
 import com.abad.lab04carritotecsup.components.TarjetaProducto
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onAgregarFavorito: (Producto) -> Unit
+) {
 
     val productos = listOf(
         Producto("Laptop Lenovo", 2499.90, 1),
@@ -46,7 +48,8 @@ fun HomeScreen() {
             items(productos) { producto ->
                 TarjetaProducto(
                     producto = producto,
-                    onEliminar = {}
+                    onEliminar = {},
+                    onFavoritoClick = { onAgregarFavorito(producto) }
                 )
             }
         }
