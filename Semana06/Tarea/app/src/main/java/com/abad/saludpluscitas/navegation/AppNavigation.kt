@@ -1,4 +1,3 @@
-
 package com.abad.saludpluscitas.navigation
 
 import androidx.compose.foundation.layout.*
@@ -13,6 +12,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.abad.saludpluscitas.data.model.Cita
+import com.abad.saludpluscitas.data.repository.Repositorio
 import com.abad.saludpluscitas.ui.components.BarraInferior
 import com.abad.saludpluscitas.ui.screens.auth.SplashScreen
 import com.abad.saludpluscitas.ui.screens.auth.LoginScreen
@@ -21,6 +22,9 @@ import com.abad.saludpluscitas.ui.screens.auth.TerminosScreen
 import com.abad.saludpluscitas.ui.screens.home.HomeScreen
 import com.abad.saludpluscitas.ui.screens.agendamiento.EspecialidadesScreen
 import com.abad.saludpluscitas.ui.screens.agendamiento.MedicosScreen
+import com.abad.saludpluscitas.ui.screens.agendamiento.FechaHoraScreen
+import com.abad.saludpluscitas.ui.screens.agendamiento.ConfirmarCitaScreen
+import com.abad.saludpluscitas.ui.screens.agendamiento.CitaExitosaScreen
 
 @Composable
 fun AppNavigation() {
@@ -149,9 +153,16 @@ fun AppNavigation() {
             ) { backStackEntry ->
                 val medicoId =
                     backStackEntry.arguments?.getInt("medicoId") ?: 0
-                PantallaTemporal("Fecha y hora - Medico $medicoId") {
-                    navController.navigate("confirmar/$medicoId/2026-10-15/10:00")
-                }
+
+                FechaHoraScreen(
+                    medicoId = medicoId,
+                    onContinuar = { fecha, hora ->
+                        navController.navigate("confirmar/$medicoId/$fecha/$hora")
+                    },
+                    onVolver = {
+                        navController.popBackStack()
+                    }
+                )
             }
             composable(
                 route = Rutas.ConfirmarCita.ruta,
@@ -173,14 +184,38 @@ fun AppNavigation() {
                     backStackEntry.arguments?.getString("fecha") ?: ""
                 val hora =
                     backStackEntry.arguments?.getString("hora") ?: ""
-                PantallaTemporal("Confirmar cita: $medicoId - $fecha - $hora") {
-                    navController.navigate(Rutas.CitaExitosa.ruta)
-                }
+                ConfirmarCitaScreen(
+                    medicoId = medicoId,
+                    fecha = fecha,
+                    hora = hora,
+                    onConfirmar = {
+                        val nuevaCita = Cita(
+                            id = (Repositorio.citas.maxOfOrNull { it.id } ?: 0) + 1,
+                            usuarioId = 1,
+                            medicoId = medicoId,
+                            fecha = fecha,
+                            hora = hora,
+                            estado = "Confirmada"
+                        )
+                        Repositorio.registrarCita(nuevaCita)
+                        navController.navigate(Rutas.CitaExitosa.ruta) {
+                            popUpTo(Rutas.Inicio.ruta)
+                        }
+                    },
+                    onVolver = {
+                        navController.popBackStack()
+                    }
+                )
             }
             composable(Rutas.CitaExitosa.ruta) {
-                PantallaTemporal("Cita registrada correctamente") {
-                    navController.navigate(Rutas.MisCitas.ruta)
-                }
+                CitaExitosaScreen(
+                    onVerCitas = {
+                        navController.navigate(Rutas.MisCitas.ruta) {
+                            popUpTo(Rutas.Inicio.ruta)
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
             composable(Rutas.MisCitas.ruta) {
                 PantallaTemporal("Mis citas") {
