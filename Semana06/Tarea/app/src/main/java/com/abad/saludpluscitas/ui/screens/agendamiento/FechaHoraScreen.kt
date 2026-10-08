@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
@@ -23,14 +25,11 @@ import androidx.compose.ui.unit.sp
 import com.abad.saludpluscitas.data.repository.Repositorio
 import com.abad.saludpluscitas.ui.components.BarraSuperior
 import com.abad.saludpluscitas.ui.components.BotonSaludPlus
-import java.util.Calendar
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
-
-data class OpcionFecha(
-    val iso: String,
-    val diaSemana: String,
-    val diaNum: String
-)
 
 @Composable
 fun FechaHoraScreen(
@@ -39,35 +38,30 @@ fun FechaHoraScreen(
     onVolver: () -> Unit
 ) {
     val medico = Repositorio.obtenerMedicoPorId(medicoId)
-    val fechasList = remember {
-        (1..7).map { diasAdd ->
-            val cal = Calendar.getInstance()
-            cal.add(Calendar.DAY_OF_YEAR, diasAdd)
-            val year = cal.get(Calendar.YEAR)
-            val month = cal.get(Calendar.MONTH) + 1
-            val day = cal.get(Calendar.DAY_OF_MONTH)
-            val iso = String.format(Locale.getDefault(), "%04d-%02d-%02d", year, month, day)
-            val diaNum = String.format(Locale.getDefault(), "%02d/%02d", day, month)
-            val diaSemana = when (cal.get(Calendar.DAY_OF_WEEK)) {
-                Calendar.MONDAY -> "LUN"
-                Calendar.TUESDAY -> "MAR"
-                Calendar.WEDNESDAY -> "MIÉ"
-                Calendar.THURSDAY -> "JUE"
-                Calendar.FRIDAY -> "VIE"
-                Calendar.SATURDAY -> "SÁB"
-                else -> "DOM"
-            }
-            OpcionFecha(iso, diaSemana, diaNum)
+
+    var semanaOffset by remember { mutableIntStateOf(0) }
+    var fechaSeleccionada by remember { mutableStateOf("") }
+    var horaSeleccionada by remember { mutableStateOf("") }
+
+    val fechasList = remember(semanaOffset) {
+        obtenerBloqueDiasHabiles(semanaOffset)
+    }
+
+    LaunchedEffect(fechasList) {
+        if (fechaSeleccionada.isNotEmpty() && fechasList.none { it.toString() == fechaSeleccionada }) {
+            fechaSeleccionada = ""
+            horaSeleccionada = ""
         }
     }
+
+    val localeEs = remember { Locale.forLanguageTag("es-ES") }
+    val formatterDiaSemana = remember { DateTimeFormatter.ofPattern("EEE", localeEs) }
+    val formatterDiaNum = remember { DateTimeFormatter.ofPattern("dd MMM", localeEs) }
 
     val horarios = listOf(
         "08:00", "09:00", "10:00", "11:00",
         "14:00", "15:00", "16:00", "17:00"
     )
-
-    var fechaSeleccionada by remember { mutableStateOf("") }
-    var horaSeleccionada by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize()) {
         BarraSuperior(
@@ -121,37 +115,73 @@ fun FechaHoraScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Selecciona una fecha",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = obtenerTextoMesAno(fechasList),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            if (semanaOffset > 0) {
+                                semanaOffset--
+                            }
+                        },
+                        enabled = semanaOffset > 0
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Anterior",
+                            tint = if (semanaOffset > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            semanaOffset++
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Siguiente",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(fechasList) { opcion ->
-                    val esSeleccionada = fechaSeleccionada == opcion.iso
+                items(fechasList) { localDate ->
+                    val fechaIso = localDate.toString()
+                    val esSeleccionada = fechaSeleccionada == fechaIso
 
                     Card(
                         modifier = Modifier
-                            .width(80.dp)
+                            .width(82.dp)
                             .clickable {
-                                fechaSeleccionada = opcion.iso
+                                fechaSeleccionada = fechaIso
                                 horaSeleccionada = ""
                             },
                         shape = RoundedCornerShape(14.dp),
@@ -169,11 +199,11 @@ fun FechaHoraScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                                .padding(vertical = 12.dp, horizontal = 6.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = opcion.diaSemana,
+                                text = localDate.format(formatterDiaSemana).uppercase(),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (esSeleccionada) {
@@ -184,8 +214,8 @@ fun FechaHoraScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = opcion.diaNum,
-                                fontSize = 13.sp,
+                                text = localDate.format(formatterDiaNum).uppercase(),
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (esSeleccionada) {
                                     MaterialTheme.colorScheme.onPrimary
@@ -198,7 +228,7 @@ fun FechaHoraScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -226,17 +256,30 @@ fun FechaHoraScreen(
             ) {
                 items(horarios) { hora ->
                     val esSeleccionada = horaSeleccionada == hora
+                    val ocupado = if (fechaSeleccionada.isNotEmpty()) {
+                        Repositorio.estaHorarioOcupado(medicoId, fechaSeleccionada, hora)
+                    } else {
+                        false
+                    }
+                    val pasado = if (fechaSeleccionada.isNotEmpty()) {
+                        estaHoraPasadaHoy(fechaSeleccionada, hora)
+                    } else {
+                        false
+                    }
+                    val noDisponible = ocupado || pasado
 
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { horaSeleccionada = hora },
+                            .clickable(enabled = !noDisponible && fechaSeleccionada.isNotEmpty()) {
+                                horaSeleccionada = hora
+                            },
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (esSeleccionada) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.surface
+                            containerColor = when {
+                                esSeleccionada -> MaterialTheme.colorScheme.primary
+                                noDisponible -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                else -> MaterialTheme.colorScheme.surface
                             }
                         ),
                         elevation = CardDefaults.cardElevation(
@@ -246,19 +289,36 @@ fun FechaHoraScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 14.dp),
+                                .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = hora,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (esSeleccionada) {
-                                    MaterialTheme.colorScheme.onPrimary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
+                            if (noDisponible) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = hora,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    )
+                                    Text(
+                                        text = if (pasado) "Pasado" else "Ocupado",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                    )
                                 }
-                            )
+                            } else {
+                                Text(
+                                    text = hora,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (esSeleccionada) {
+                                        MaterialTheme.colorScheme.onPrimary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -274,5 +334,69 @@ fun FechaHoraScreen(
                 enabled = fechaSeleccionada.isNotEmpty() && horaSeleccionada.isNotEmpty()
             )
         }
+    }
+}
+
+private fun obtenerBloqueDiasHabiles(semanaOffset: Int): List<LocalDate> {
+    var actual = LocalDate.now()
+    if (actual.dayOfWeek == DayOfWeek.SATURDAY) {
+        actual = actual.plusDays(2)
+    } else if (actual.dayOfWeek == DayOfWeek.SUNDAY) {
+        actual = actual.plusDays(1)
+    }
+
+    var saltos = semanaOffset * 5
+    while (saltos > 0) {
+        actual = actual.plusDays(1)
+        if (actual.dayOfWeek != DayOfWeek.SATURDAY && actual.dayOfWeek != DayOfWeek.SUNDAY) {
+            saltos--
+        }
+    }
+
+    val bloque = mutableListOf<LocalDate>()
+    while (bloque.size < 5) {
+        if ((actual.dayOfWeek != DayOfWeek.SATURDAY) && (actual.dayOfWeek != DayOfWeek.SUNDAY)) {
+            bloque.add(actual)
+        }
+        actual = actual.plusDays(1)
+    }
+    return bloque
+}
+
+private fun obtenerTextoMesAno(dias: List<LocalDate>): String {
+    if (dias.isEmpty()) return ""
+    val primer = dias.first()
+    val ultimo = dias.last()
+
+    val localeEs = Locale.forLanguageTag("es-ES")
+    val formatterMes = DateTimeFormatter.ofPattern("MMMM", localeEs)
+    val mesPrimer = primer.format(formatterMes).replaceFirstChar { it.uppercase() }
+    val mesUltimo = ultimo.format(formatterMes).replaceFirstChar { it.uppercase() }
+
+    return when {
+        primer.year != ultimo.year -> {
+            "$mesPrimer ${primer.year} - $mesUltimo ${ultimo.year}"
+        }
+        primer.month != ultimo.month -> {
+            "$mesPrimer - $mesUltimo ${primer.year}"
+        }
+        else -> {
+            "$mesPrimer ${primer.year}"
+        }
+    }
+}
+
+private fun estaHoraPasadaHoy(fechaIso: String, horaSlot: String): Boolean {
+    val hoyIso = LocalDate.now().toString()
+    if (fechaIso != hoyIso) return false
+    return try {
+        val ahora = LocalTime.now()
+        val partes = horaSlot.split(":")
+        val horaInt = partes[0].toInt()
+        val minInt = partes[1].toInt()
+        val slotTime = LocalTime.of(horaInt, minInt)
+        slotTime.isBefore(ahora)
+    } catch (_: Exception) {
+        false
     }
 }

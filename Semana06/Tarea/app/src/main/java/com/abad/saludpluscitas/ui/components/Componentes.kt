@@ -2,6 +2,7 @@ package com.abad.saludpluscitas.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -47,7 +49,11 @@ fun CampoSaludPlus(
     valor: String,
     onValorCambio: (String) -> Unit,
     etiqueta: String,
-    icono: ImageVector? = null
+    icono: ImageVector? = null,
+    esError: Boolean = false,
+    textoError: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     OutlinedTextField(
         value = valor,
@@ -56,13 +62,21 @@ fun CampoSaludPlus(
         leadingIcon = if (icono != null) {
             { Icon(imageVector = icono, contentDescription = etiqueta) }
         } else null,
+        isError = esError,
+        supportingText = if (esError && !textoError.isNullOrBlank()) {
+            { Text(text = textoError, color = MaterialTheme.colorScheme.error) }
+        } else null,
+        keyboardOptions = keyboardOptions,
+        visualTransformation = visualTransformation,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             focusedLabelColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            errorBorderColor = MaterialTheme.colorScheme.error,
+            errorLabelColor = MaterialTheme.colorScheme.error
         )
     )
 }

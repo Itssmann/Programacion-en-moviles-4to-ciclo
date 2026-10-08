@@ -25,7 +25,8 @@ fun DetalleCitaScreen(
     citaId: Int,
     onVolver: () -> Unit
 ) {
-    val cita = Repositorio.citas.find { it.id == citaId }
+    val usuarioId = Repositorio.usuarioActual?.id ?: 1
+    val cita = Repositorio.citas.find { it.id == citaId && it.usuarioId == usuarioId }
     val medico = cita?.let {
         Repositorio.obtenerMedicoPorId(it.medicoId)
     }
@@ -40,13 +41,21 @@ fun DetalleCitaScreen(
             if (cita == null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Box(
                         modifier = Modifier.padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No se encontró la cita solicitada.")
+                        Text(
+                            text = "No se encontró la cita solicitada.",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             } else {

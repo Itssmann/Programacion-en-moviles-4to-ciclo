@@ -24,7 +24,8 @@ import com.abad.saludpluscitas.data.repository.Repositorio
 fun MisCitasScreen(
     onSeleccionarCita: (Int) -> Unit
 ) {
-    val citas = Repositorio.obtenerCitasPorUsuario(1)
+    val usuarioId = Repositorio.usuarioActual?.id ?: 1
+    val citas = Repositorio.obtenerCitasPorUsuario(usuarioId)
 
     Column(
         modifier = Modifier

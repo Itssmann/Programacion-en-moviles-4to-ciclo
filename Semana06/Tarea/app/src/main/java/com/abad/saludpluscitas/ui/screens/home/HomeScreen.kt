@@ -39,6 +39,9 @@ fun HomeScreen(
     onPerfil: () -> Unit = {},
     onResultados: () -> Unit = {}
 ) {
+    val usuario = Repositorio.usuarioActual
+    val nombreUsuario = usuario?.nombre ?: "Paciente"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,7 +59,7 @@ fun HomeScreen(
                 modifier = Modifier.padding(20.dp)
             ) {
                 Text(
-                    text = "¡Hola, Luis!",
+                    text = "¡Hola, $nombreUsuario!",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer

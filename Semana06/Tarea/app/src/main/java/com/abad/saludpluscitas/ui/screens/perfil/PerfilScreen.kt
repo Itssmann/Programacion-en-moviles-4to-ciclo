@@ -1,9 +1,12 @@
 package com.abad.saludpluscitas.ui.screens.perfil
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
@@ -19,12 +22,15 @@ import androidx.compose.ui.unit.sp
 import com.abad.saludpluscitas.data.repository.Repositorio
 
 @Composable
-fun PerfilScreen() {
-    val usuario = Repositorio.usuarios.find { it.id == 1 }
+fun PerfilScreen(
+    onCerrarSesion: () -> Unit = {}
+) {
+    val usuario = Repositorio.usuarioActual
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Text(
@@ -141,9 +147,34 @@ fun PerfilScreen() {
                 ItemCampoPerfil(
                     icono = Icons.Default.Badge,
                     etiqueta = "Código de paciente",
-                    valor = "PAC-00${usuario?.id ?: 1}"
+                    valor = if (usuario != null) "PAC-00${usuario.id}" else "Sin datos"
                 )
             }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedButton(
+            onClick = onCerrarSesion,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Cerrar sesión",
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
         }
     }
 }

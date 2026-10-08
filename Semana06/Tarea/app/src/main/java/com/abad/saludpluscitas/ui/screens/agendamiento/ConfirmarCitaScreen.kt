@@ -10,16 +10,20 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.abad.saludpluscitas.data.repository.Repositorio
 import com.abad.saludpluscitas.ui.components.BarraSuperior
 import com.abad.saludpluscitas.ui.components.BotonSaludPlus
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun ConfirmarCitaScreen(
@@ -30,6 +34,8 @@ fun ConfirmarCitaScreen(
     onVolver: () -> Unit
 ) {
     val medico = Repositorio.obtenerMedicoPorId(medicoId)
+    val estaOcupado = Repositorio.estaHorarioOcupado(medicoId, fecha, hora)
+    var estaProcesando by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         BarraSuperior(
@@ -86,7 +92,7 @@ fun ConfirmarCitaScreen(
                         FilaDetalleConfirmacion(
                             icono = Icons.Default.CalendarMonth,
                             titulo = "Fecha",
-                            subtitulo = fecha
+                            subtitulo = formatearFechaEspanol(fecha)
                         )
 
                         HorizontalDivider(
@@ -119,17 +125,46 @@ fun ConfirmarCitaScreen(
                         FilaDetalleConfirmacion(
                             icono = Icons.Default.Info,
                             titulo = "Estado",
-                            subtitulo = "Por confirmar"
+                            subtitulo = if (estaOcupado) "Horario no disponible" else "Por confirmar"
                         )
                     }
+                }
+
+                if (estaOcupado) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "El horario seleccionado ya no está disponible. Por favor vuelve atrás y selecciona otro horario.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
             BotonSaludPlus(
-                texto = "Confirmar cita",
-                onClick = onConfirmar
+                texto = if (estaProcesando) "Procesando..." else "Confirmar cita",
+                onClick = {
+                    if (!estaProcesando && !estaOcupado) {
+                        estaProcesando = true
+                        onConfirmar()
+                    }
+                },
+                enabled = !estaProcesando && !estaOcupado
             )
         }
+    }
+}
+
+private fun formatearFechaEspanol(fechaIso: String): String {
+    return try {
+        val localDate = LocalDate.parse(fechaIso)
+        val localeEs = Locale.forLanguageTag("es-ES")
+        val formatter = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", localeEs)
+        val texto = localDate.format(formatter)
+        texto.replaceFirstChar { it.uppercase() }
+    } catch (_: Exception) {
+        fechaIso
     }
 }
 

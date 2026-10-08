@@ -1,16 +1,21 @@
 package com.abad.saludpluscitas.data.repository
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.abad.saludpluscitas.data.model.Cita
 import com.abad.saludpluscitas.data.model.Especialidad
 import com.abad.saludpluscitas.data.model.Medico
 import com.abad.saludpluscitas.data.model.Usuario
-import androidx.compose.runtime.mutableStateListOf
 
 object Repositorio {
 
     val usuarios = mutableListOf(
         Usuario(1, "Luis Abad", "luis@gmail.com", "987654321", "123456")
     )
+
+    var usuarioActual by mutableStateOf<Usuario?>(null)
 
     val especialidades = listOf(
         Especialidad(1, "Medicina General", "Atencion medica general"),
@@ -46,12 +51,21 @@ object Repositorio {
 
     fun registrarUsuario(usuario: Usuario) {
         usuarios.add(usuario)
+        usuarioActual = usuario
     }
 
     fun iniciarSesion(correo: String, contrasena: String): Usuario? {
-        return usuarios.find {
+        val u = usuarios.find {
             it.correo == correo && it.contrasena == contrasena
         }
+        if (u != null) {
+            usuarioActual = u
+        }
+        return u
+    }
+
+    fun cerrarSesion() {
+        usuarioActual = null
     }
 
     fun registrarCita(cita: Cita) {
@@ -60,5 +74,14 @@ object Repositorio {
 
     fun obtenerCitasPorUsuario(usuarioId: Int): List<Cita> {
         return citas.filter { it.usuarioId == usuarioId }
+    }
+
+    fun estaHorarioOcupado(medicoId: Int, fecha: String, hora: String): Boolean {
+        return citas.any {
+            it.medicoId == medicoId &&
+                    it.fecha == fecha &&
+                    it.hora == hora &&
+                    it.estado != "Cancelada"
+        }
     }
 }
