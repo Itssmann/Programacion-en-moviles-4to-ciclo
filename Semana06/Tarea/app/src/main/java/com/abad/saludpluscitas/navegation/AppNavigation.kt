@@ -123,6 +123,15 @@ fun AppNavigation() {
                     },
                     onSeleccionarEspecialidad = { especialidadId ->
                         navController.navigate("medicos/$especialidadId")
+                    },
+                    onMisCitas = {
+                        navController.navigate(Rutas.MisCitas.ruta)
+                    },
+                    onPerfil = {
+                        navController.navigate(Rutas.Perfil.ruta)
+                    },
+                    onResultados = {
+                        navController.navigate(Rutas.Resultados.ruta)
                     }
                 )
             }
