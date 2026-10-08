@@ -5,7 +5,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +24,11 @@ import com.abad.saludpluscitas.ui.screens.agendamiento.MedicosScreen
 import com.abad.saludpluscitas.ui.screens.agendamiento.FechaHoraScreen
 import com.abad.saludpluscitas.ui.screens.agendamiento.ConfirmarCitaScreen
 import com.abad.saludpluscitas.ui.screens.agendamiento.CitaExitosaScreen
+import com.abad.saludpluscitas.ui.screens.citas.MisCitasScreen
+import com.abad.saludpluscitas.ui.screens.citas.DetalleCitaScreen
+import com.abad.saludpluscitas.ui.screens.perfil.PerfilScreen
+import com.abad.saludpluscitas.ui.screens.resultados.ResultadosScreen
+import com.abad.saludpluscitas.ui.screens.notificaciones.NotificacionesScreen
 
 @Composable
 fun AppNavigation() {
@@ -44,12 +48,20 @@ fun AppNavigation() {
                 BarraInferior(
                     rutaActual = rutaActual,
                     onNavegar = { ruta ->
-                        navController.navigate(ruta) {
-                            popUpTo(Rutas.Inicio.ruta) {
-                                saveState = true
+                        if (ruta != rutaActual) {
+                            if (ruta == Rutas.Inicio.ruta) {
+                                navController.popBackStack(
+                                    Rutas.Inicio.ruta,
+                                    false
+                                )
+                            } else {
+                                navController.navigate(ruta) {
+                                    popUpTo(Rutas.Inicio.ruta) {
+                                        inclusive = false
+                                    }
+                                    launchSingleTop = true
+                                }
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )
@@ -75,6 +87,7 @@ fun AppNavigation() {
                             popUpTo(Rutas.Login.ruta) {
                                 inclusive = true
                             }
+                            launchSingleTop = true
                         }
                     },
                     onRegistro = {
@@ -157,7 +170,9 @@ fun AppNavigation() {
                 FechaHoraScreen(
                     medicoId = medicoId,
                     onContinuar = { fecha, hora ->
-                        navController.navigate("confirmar/$medicoId/$fecha/$hora")
+                        navController.navigate(
+                            "confirmar/$medicoId/$fecha/$hora"
+                        )
                     },
                     onVolver = {
                         navController.popBackStack()
@@ -200,6 +215,7 @@ fun AppNavigation() {
                         Repositorio.registrarCita(nuevaCita)
                         navController.navigate(Rutas.CitaExitosa.ruta) {
                             popUpTo(Rutas.Inicio.ruta)
+                            launchSingleTop = true
                         }
                     },
                     onVolver = {
@@ -218,9 +234,11 @@ fun AppNavigation() {
                 )
             }
             composable(Rutas.MisCitas.ruta) {
-                PantallaTemporal("Mis citas") {
-                    navController.navigate("detalleCita/1")
-                }
+                MisCitasScreen(
+                    onSeleccionarCita = { citaId ->
+                        navController.navigate("detalleCita/$citaId")
+                    }
+                )
             }
             composable(
                 route = Rutas.DetalleCita.ruta,
@@ -232,41 +250,26 @@ fun AppNavigation() {
             ) { backStackEntry ->
                 val citaId =
                     backStackEntry.arguments?.getInt("citaId") ?: 0
-                PantallaTemporal("Detalle de cita $citaId") {
-                    navController.popBackStack()
-                }
+                DetalleCitaScreen(
+                    citaId = citaId,
+                    onVolver = {
+                        navController.popBackStack()
+                    }
+                )
             }
             composable(Rutas.Perfil.ruta) {
-                PantallaTemporal("Mi perfil") {
-                    navController.navigate(Rutas.Inicio.ruta)
-                }
+                PerfilScreen()
             }
             composable(Rutas.Resultados.ruta) {
-                PantallaTemporal("Resultados medicos") {
-                    navController.navigate(Rutas.Inicio.ruta)
-                }
+                ResultadosScreen()
             }
             composable(Rutas.Notificaciones.ruta) {
-                PantallaTemporal("Notificaciones") {
-                    navController.navigate(Rutas.Inicio.ruta)
-                }
+                NotificacionesScreen(
+                    onVolver = {
+                        navController.popBackStack()
+                    }
+                )
             }
-        }
-    }
-}
-@Composable
-fun PantallaTemporal(
-    titulo: String,
-    onContinuar: () -> Unit
-) {
-    Column(
-        modifier = Modifier.padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(text = titulo)
-
-        Button(onClick = onContinuar) {
-            Text("Continuar")
         }
     }
 }

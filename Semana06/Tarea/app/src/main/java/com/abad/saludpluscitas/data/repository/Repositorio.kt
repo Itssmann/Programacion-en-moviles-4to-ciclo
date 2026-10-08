@@ -4,6 +4,7 @@ import com.abad.saludpluscitas.data.model.Cita
 import com.abad.saludpluscitas.data.model.Especialidad
 import com.abad.saludpluscitas.data.model.Medico
 import com.abad.saludpluscitas.data.model.Usuario
+import androidx.compose.runtime.mutableStateListOf
 
 object Repositorio {
 
@@ -29,7 +30,7 @@ object Repositorio {
         Medico(6, "Dr. Pedro Lopez", 6, 6, 4.6)
     )
 
-    val citas = mutableListOf<Cita>()
+    val citas = mutableStateListOf<Cita>()
 
     fun obtenerEspecialidades(): List<Especialidad> {
         return especialidades
