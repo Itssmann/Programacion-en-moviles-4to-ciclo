@@ -8,7 +8,7 @@ import com.abad.saludpluscitas.data.model.Usuario
 object Repositorio {
 
     val usuarios = mutableListOf(
-        Usuario(1, "Juan Perez", "juan@gmail.com", "987654321", "123456")
+        Usuario(1, "Luis Abad", "luis@gmail.com", "987654321", "123456")
     )
 
     val especialidades = listOf(
