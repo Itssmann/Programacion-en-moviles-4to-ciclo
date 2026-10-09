@@ -1,5 +1,6 @@
 package com.abad.saludpluscitas.ui.screens.agendamiento
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -13,13 +14,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.abad.saludpluscitas.data.repository.Repositorio
@@ -63,6 +67,15 @@ fun FechaHoraScreen(
         "14:00", "15:00", "16:00", "17:00"
     )
 
+    val todosOcupados = remember(fechaSeleccionada, medicoId) {
+        if (fechaSeleccionada.isBlank()) false
+        else horarios.all { hora ->
+            val ocupado = Repositorio.estaHorarioOcupado(medicoId, fechaSeleccionada, hora)
+            val pasado = estaHoraPasadaHoy(fechaSeleccionada, hora)
+            ocupado || pasado
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         BarraSuperior(
             titulo = "Fecha y hora",
@@ -87,15 +100,20 @@ fun FechaHoraScreen(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(44.dp)
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
+                            if (medico != null) {
+                                Image(
+                                    painter = painterResource(id = medico.fotoResId),
+                                    contentDescription = medico.nombre,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -248,76 +266,95 @@ fun FechaHoraScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(horarios) { hora ->
-                    val esSeleccionada = horaSeleccionada == hora
-                    val ocupado = if (fechaSeleccionada.isNotEmpty()) {
-                        Repositorio.estaHorarioOcupado(medicoId, fechaSeleccionada, hora)
-                    } else {
-                        false
-                    }
-                    val pasado = if (fechaSeleccionada.isNotEmpty()) {
-                        estaHoraPasadaHoy(fechaSeleccionada, hora)
-                    } else {
-                        false
-                    }
-                    val noDisponible = ocupado || pasado
+            if (todosOcupados) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "No hay horarios disponibles para este médico en esta fecha",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(horarios) { hora ->
+                        val esSeleccionada = horaSeleccionada == hora
+                        val ocupado = if (fechaSeleccionada.isNotEmpty()) {
+                            Repositorio.estaHorarioOcupado(medicoId, fechaSeleccionada, hora)
+                        } else {
+                            false
+                        }
+                        val pasado = if (fechaSeleccionada.isNotEmpty()) {
+                            estaHoraPasadaHoy(fechaSeleccionada, hora)
+                        } else {
+                            false
+                        }
+                        val noDisponible = ocupado || pasado
 
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(enabled = !noDisponible && fechaSeleccionada.isNotEmpty()) {
-                                horaSeleccionada = hora
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = when {
-                                esSeleccionada -> MaterialTheme.colorScheme.primary
-                                noDisponible -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                else -> MaterialTheme.colorScheme.surface
-                            }
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = if (esSeleccionada) 4.dp else 1.dp
-                        )
-                    ) {
-                        Box(
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
+                                .clickable(enabled = !noDisponible && fechaSeleccionada.isNotEmpty()) {
+                                    horaSeleccionada = hora
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = when {
+                                    esSeleccionada -> MaterialTheme.colorScheme.primary
+                                    noDisponible -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    else -> MaterialTheme.colorScheme.surface
+                                }
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = if (esSeleccionada) 4.dp else 1.dp
+                            )
                         ) {
-                            if (noDisponible) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (noDisponible) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = hora,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        )
+                                        Text(
+                                            text = if (pasado) "Pasado" else "No disponible",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                        )
+                                    }
+                                } else {
                                     Text(
                                         text = hora,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                    )
-                                    Text(
-                                        text = if (pasado) "Pasado" else "Ocupado",
-                                        fontSize = 10.sp,
+                                        fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                        color = if (esSeleccionada) {
+                                            MaterialTheme.colorScheme.onPrimary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        }
                                     )
                                 }
-                            } else {
-                                Text(
-                                    text = hora,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (esSeleccionada) {
-                                        MaterialTheme.colorScheme.onPrimary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    }
-                                )
                             }
                         }
                     }
@@ -327,11 +364,11 @@ fun FechaHoraScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             BotonSaludPlus(
-                texto = "Continuar",
+                texto = "Confirmar cita",
                 onClick = {
                     onContinuar(fechaSeleccionada, horaSeleccionada)
                 },
-                enabled = fechaSeleccionada.isNotEmpty() && horaSeleccionada.isNotEmpty()
+                enabled = fechaSeleccionada.isNotEmpty() && horaSeleccionada.isNotEmpty() && !todosOcupados
             )
         }
     }

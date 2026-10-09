@@ -31,17 +31,20 @@ private val PATRON_CORREO = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{
 @Composable
 fun RegistroScreen(
     onRegistroExitoso: () -> Unit,
-    onTerminos: () -> Unit
+    onTerminos: () -> Unit,
+    onLogin: () -> Unit
 ) {
     var nombre by rememberSaveable { mutableStateOf("") }
     var correo by rememberSaveable { mutableStateOf("") }
     var telefono by rememberSaveable { mutableStateOf("") }
     var contrasena by rememberSaveable { mutableStateOf("") }
+    var aceptaTerminos by rememberSaveable { mutableStateOf(false) }
 
     var errorNombre by rememberSaveable { mutableStateOf<String?>(null) }
     var errorCorreo by rememberSaveable { mutableStateOf<String?>(null) }
     var errorTelefono by rememberSaveable { mutableStateOf<String?>(null) }
     var errorContrasena by rememberSaveable { mutableStateOf<String?>(null) }
+    var errorTerminos by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -88,7 +91,9 @@ fun RegistroScreen(
         CampoSaludPlus(
             valor = nombre,
             onValorCambio = {
-                nombre = it
+                if (it.all { char -> char.isLetter() || char.isWhitespace() }) {
+                    nombre = it
+                }
                 errorNombre = null
             },
             etiqueta = "Nombre completo",
@@ -144,6 +149,52 @@ fun RegistroScreen(
             visualTransformation = PasswordVisualTransformation()
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = aceptaTerminos,
+                onCheckedChange = {
+                    aceptaTerminos = it
+                    errorTerminos = null
+                }
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Acepto los ",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(
+                        onClick = onTerminos,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "términos y condiciones",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        if (errorTerminos != null) {
+            Text(
+                text = errorTerminos ?: "",
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 11.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
         BotonSaludPlus(
@@ -155,6 +206,7 @@ fun RegistroScreen(
 
                 errorNombre = when {
                     nombreLimpio.isEmpty() -> "El nombre completo es obligatorio"
+                    nombreLimpio.any { it.isDigit() } -> "El nombre no debe contener números"
                     else -> null
                 }
 
@@ -177,7 +229,9 @@ fun RegistroScreen(
                     else -> null
                 }
 
-                if (errorNombre == null && errorCorreo == null && errorTelefono == null && errorContrasena == null) {
+                errorTerminos = if (!aceptaTerminos) "Debes aceptar los términos y condiciones" else null
+
+                if (errorNombre == null && errorCorreo == null && errorTelefono == null && errorContrasena == null && errorTerminos == null) {
                     val nuevoUsuario = Usuario(
                         id = (Repositorio.usuarios.maxOfOrNull { it.id } ?: 0) + 1,
                         nombre = nombreLimpio,
@@ -192,14 +246,27 @@ fun RegistroScreen(
             }
         )
 
-        TextButton(
-            onClick = onTerminos
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Ver términos y condiciones",
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
+                text = "¿Ya tienes cuenta? ",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            TextButton(
+                onClick = onLogin,
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    text = "Iniciar sesión",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

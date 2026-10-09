@@ -10,29 +10,35 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChildCare
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.abad.saludpluscitas.data.repository.Repositorio
-import com.abad.saludpluscitas.ui.components.BotonSaludPlus
 
 @Composable
 fun HomeScreen(
+    onAbrirMenu: () -> Unit,
+    onNotificaciones: () -> Unit,
+    onSedes: () -> Unit,
+    onDoctores: () -> Unit,
     onEspecialidades: () -> Unit,
     onSeleccionarEspecialidad: (Int) -> Unit,
     onMisCitas: () -> Unit = {},
@@ -48,103 +54,105 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Card(
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
+            IconButton(
+                onClick = onAbrirMenu,
+                modifier = Modifier.size(40.dp)
             ) {
-                Text(
-                    text = "¡Hola, $nombreUsuario!",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Menú",
+                    tint = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "¿En qué podemos ayudarte hoy?",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.MedicalServices,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
+            }
+
+            BadgedBox(
+                badge = {
+                    val count = usuario?.let { Repositorio.obtenerCitasPorUsuario(it.id).size } ?: 0
+                    if (count > 0) {
+                        Badge { Text(count.toString()) }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Clínica SaludPlus • Atención Médica",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                }
+            ) {
+                IconButton(onClick = onNotificaciones) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notificaciones",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = "Accesos rápidos",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            CardAccesoRapido(
-                titulo = "Agendar cita",
-                icono = Icons.Default.CalendarMonth,
-                onClick = onEspecialidades,
-                modifier = Modifier.weight(1f)
+        Column {
+            Text(
+                text = "¡Hola, $nombreUsuario!",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
-            CardAccesoRapido(
-                titulo = "Mis citas",
-                icono = Icons.Default.DateRange,
-                onClick = onMisCitas,
-                modifier = Modifier.weight(1f)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "¿Qué deseas hacer hoy?",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            CardAccesoRapido(
-                titulo = "Resultados",
-                icono = Icons.Default.Description,
-                onClick = onResultados,
-                modifier = Modifier.weight(1f)
-            )
-            CardAccesoRapido(
-                titulo = "Mi perfil",
-                icono = Icons.Default.Person,
-                onClick = onPerfil,
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CardAccesoPastel(
+                    titulo = "Sedes",
+                    icono = Icons.Default.Business,
+                    colorContainer = Color(0xFFE3F2FD),
+                    colorIcono = Color(0xFF1976D2),
+                    onClick = onSedes,
+                    modifier = Modifier.weight(1f)
+                )
+                CardAccesoPastel(
+                    titulo = "Mis citas",
+                    icono = Icons.Default.CalendarMonth,
+                    colorContainer = Color(0xFFE8F5E9),
+                    colorIcono = Color(0xFF388E3C),
+                    onClick = onMisCitas,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CardAccesoPastel(
+                    titulo = "Doctores",
+                    icono = Icons.Default.MedicalServices,
+                    colorContainer = Color(0xFFF3E5F5),
+                    colorIcono = Color(0xFF7B1FA2),
+                    onClick = onDoctores,
+                    modifier = Modifier.weight(1f)
+                )
+                CardAccesoPastel(
+                    titulo = "Resultados",
+                    icono = Icons.Default.Description,
+                    colorContainer = Color(0xFFFFF3E0),
+                    colorIcono = Color(0xFFF57C00),
+                    onClick = onResultados,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -177,7 +185,7 @@ fun HomeScreen(
             items(Repositorio.especialidades) { especialidad ->
                 Card(
                     modifier = Modifier
-                        .width(180.dp)
+                        .width(160.dp)
                         .clickable {
                             onSeleccionarEspecialidad(especialidad.id)
                         },
@@ -188,7 +196,8 @@ fun HomeScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Surface(
                             shape = CircleShape,
@@ -203,22 +212,24 @@ fun HomeScreen(
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = especialidad.nombre,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
+                            fontSize = 14.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = especialidad.descripcion,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
@@ -230,7 +241,7 @@ fun HomeScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onEspecialidades() },
+                .clickable { onSedes() },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -242,14 +253,14 @@ fun HomeScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Agenda tu cita médica",
+                        text = "Conoce nuestras Sedes",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Encuentra el especialista ideal para tu salud y reserva en minutos.",
+                        text = "Elige tu sede de preferencia y reserva tu cita con nuestros especialistas.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                     )
@@ -263,53 +274,54 @@ fun HomeScreen(
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-
-        BotonSaludPlus(
-            texto = "Ver todas las especialidades",
-            onClick = onEspecialidades
-        )
     }
 }
 
 @Composable
-private fun CardAccesoRapido(
+private fun CardAccesoPastel(
     titulo: String,
     icono: ImageVector,
+    colorContainer: Color,
+    colorIcono: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .height(110.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = colorContainer
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = colorIcono.copy(alpha = 0.15f),
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icono,
                         contentDescription = titulo,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = colorIcono,
                         modifier = Modifier.size(22.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(10.dp))
+
             Text(
                 text = titulo,
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface
+                fontSize = 14.sp,
+                color = Color.DarkGray
             )
         }
     }
