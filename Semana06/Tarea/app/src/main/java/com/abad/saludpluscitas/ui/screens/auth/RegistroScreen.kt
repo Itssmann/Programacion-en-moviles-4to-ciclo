@@ -1,9 +1,10 @@
 package com.abad.saludpluscitas.ui.screens.auth
 
+import android.util.Patterns
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.abad.saludpluscitas.data.model.Usuario
@@ -20,6 +21,7 @@ fun RegistroScreen(
     var correo by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
+    var aceptaTerminos by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf("") }
 
     Column(
@@ -56,41 +58,76 @@ fun RegistroScreen(
             etiqueta = "Contraseña"
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = aceptaTerminos,
+                onCheckedChange = { aceptaTerminos = it }
+            )
+
+            TextButton(
+                onClick = onTerminos
+            ) {
+                Text("Acepto los términos y condiciones")
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
 
         BotonSaludPlus(
             texto = "Registrarme",
             onClick = {
-                if (
-                    nombre.isNotBlank() &&
-                    correo.isNotBlank() &&
-                    telefono.isNotBlank() &&
-                    contrasena.isNotBlank()
-                ) {
+                val nombreLimpio = nombre.trim()
+                val correoLimpio = correo.trim()
+                val telefonoLimpio = telefono.trim()
+                mensaje = when {
+                    nombreLimpio.isBlank() ||
+                            correoLimpio.isBlank() ||
+                            telefonoLimpio.isBlank() ||
+                            contrasena.isBlank() ->
+                        "Completa todos los campos"
+
+                    !Patterns.EMAIL_ADDRESS.matcher(correoLimpio).matches() ->
+                        "Ingresa un correo electrónico válido"
+
+                    !telefonoLimpio.matches(Regex("^9[0-9]{8}$")) ->
+                        "El celular debe tener 9 dígitos y empezar con 9"
+
+                    contrasena.length < 6 ->
+                        "La contraseña debe tener al menos 6 caracteres"
+
+                    Repositorio.usuarios.any {
+                        it.correo.equals(correoLimpio, ignoreCase = true)
+                    } ->
+                        "Este correo electrónico ya está registrado"
+
+                    !aceptaTerminos ->
+                        "Debes aceptar los términos y condiciones"
+
+                    else -> ""
+                }
+
+                if (mensaje.isEmpty()) {
                     val nuevoUsuario = Usuario(
                         id = (Repositorio.usuarios.maxOfOrNull { it.id } ?: 0) + 1,
-                        nombre = nombre,
-                        correo = correo,
-                        telefono = telefono,
+                        nombre = nombreLimpio,
+                        correo = correoLimpio,
+                        telefono = telefonoLimpio,
                         contrasena = contrasena
                     )
-
                     Repositorio.registrarUsuario(nuevoUsuario)
                     onRegistroExitoso()
-
-                } else {
-                    mensaje = "Completa todos los campos"
                 }
             }
         )
-        TextButton(
-            onClick = onTerminos
-        ) {
-            Text("Ver términos y condiciones")
-        }
-
         if (mensaje.isNotEmpty()) {
-            Text(mensaje)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = mensaje,
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }

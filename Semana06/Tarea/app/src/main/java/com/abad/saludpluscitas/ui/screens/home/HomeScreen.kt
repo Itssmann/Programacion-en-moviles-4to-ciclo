@@ -17,16 +17,17 @@ fun HomeScreen(
     onEspecialidades: () -> Unit,
     onSeleccionarEspecialidad: (Int) -> Unit
 ) {
+    val usuario = Repositorio.usuarioActual
+    val nombre = usuario?.nombre?.substringBefore(" ") ?: "Paciente"
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
         Text(
-            text = "¡Hola, Luis!",
+            text = "¡Hola, $nombre!",
             fontSize = 26.sp
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         Text("¿En qué podemos ayudarte hoy?")

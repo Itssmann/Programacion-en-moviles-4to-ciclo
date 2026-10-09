@@ -204,18 +204,26 @@ fun AppNavigation() {
                     fecha = fecha,
                     hora = hora,
                     onConfirmar = {
-                        val nuevaCita = Cita(
-                            id = (Repositorio.citas.maxOfOrNull { it.id } ?: 0) + 1,
-                            usuarioId = 1,
-                            medicoId = medicoId,
-                            fecha = fecha,
-                            hora = hora,
-                            estado = "Confirmada"
-                        )
-                        Repositorio.registrarCita(nuevaCita)
-                        navController.navigate(Rutas.CitaExitosa.ruta) {
-                            popUpTo(Rutas.Inicio.ruta)
-                            launchSingleTop = true
+                        val horarioOcupado = Repositorio.citas.any {
+                            it.medicoId == medicoId &&
+                                    it.fecha == fecha &&
+                                    it.hora == hora &&
+                                    it.estado == "Confirmada"
+                        }
+                        if (!horarioOcupado) {
+                            val nuevaCita = Cita(
+                                id = (Repositorio.citas.maxOfOrNull { it.id } ?: 0) + 1,
+                                usuarioId = Repositorio.usuarioActual?.id ?: return@ConfirmarCitaScreen,
+                                medicoId = medicoId,
+                                fecha = fecha,
+                                hora = hora,
+                                estado = "Confirmada"
+                            )
+                            Repositorio.registrarCita(nuevaCita)
+                            navController.navigate(Rutas.CitaExitosa.ruta) {
+                                popUpTo(Rutas.Inicio.ruta)
+                                launchSingleTop = true
+                            }
                         }
                     },
                     onVolver = {
@@ -258,7 +266,16 @@ fun AppNavigation() {
                 )
             }
             composable(Rutas.Perfil.ruta) {
-                PerfilScreen()
+                PerfilScreen(
+                    onCerrarSesion = {
+                        navController.navigate(Rutas.Login.ruta) {
+                            popUpTo(Rutas.Inicio.ruta) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
             composable(Rutas.Resultados.ruta) {
                 ResultadosScreen()

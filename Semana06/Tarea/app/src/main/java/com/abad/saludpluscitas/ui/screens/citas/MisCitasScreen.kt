@@ -1,3 +1,4 @@
+
 package com.abad.saludpluscitas.ui.screens.citas
 
 import androidx.compose.foundation.clickable
@@ -14,7 +15,13 @@ import com.abad.saludpluscitas.data.repository.Repositorio
 fun MisCitasScreen(
     onSeleccionarCita: (Int) -> Unit
 ) {
-    val citas = Repositorio.obtenerCitasPorUsuario(1)
+    val usuarioId = Repositorio.usuarioActual?.id
+
+    val citas = if (usuarioId != null) {
+        Repositorio.obtenerCitasPorUsuario(usuarioId)
+    } else {
+        emptyList()
+    }
 
     Column(
         modifier = Modifier

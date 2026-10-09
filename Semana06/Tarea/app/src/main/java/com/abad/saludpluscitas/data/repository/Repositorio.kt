@@ -31,6 +31,8 @@ object Repositorio {
     )
 
     val citas = mutableStateListOf<Cita>()
+    var usuarioActual: Usuario? = null
+        private set
 
     fun obtenerEspecialidades(): List<Especialidad> {
         return especialidades
@@ -49,9 +51,11 @@ object Repositorio {
     }
 
     fun iniciarSesion(correo: String, contrasena: String): Usuario? {
-        return usuarios.find {
+        val usuario = usuarios.find {
             it.correo == correo && it.contrasena == contrasena
         }
+        usuarioActual = usuario
+        return usuario
     }
 
     fun registrarCita(cita: Cita) {
@@ -60,5 +64,21 @@ object Repositorio {
 
     fun obtenerCitasPorUsuario(usuarioId: Int): List<Cita> {
         return citas.filter { it.usuarioId == usuarioId }
+    }
+
+    fun cerrarSesion() {
+        usuarioActual = null
+    }
+
+    fun buscarEspecialidades(nombre: String): List<Especialidad> {
+        return especialidades.filter {
+            it.nombre.contains(nombre, ignoreCase = true)
+        }
+    }
+
+    fun buscarMedicos(nombre: String): List<Medico> {
+        return medicos.filter {
+            it.nombre.contains(nombre, ignoreCase = true)
+        }
     }
 }
