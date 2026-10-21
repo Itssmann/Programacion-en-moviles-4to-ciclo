@@ -14,6 +14,8 @@ fun PanelScreen(
     viewModel: PanelViewModel,
     onAgenda: () -> Unit,
     onPacientes: () -> Unit,
+    onServicios: () -> Unit,
+    onAjustes: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     val citasHoy by viewModel.citasHoy.collectAsState()
@@ -112,24 +114,42 @@ fun PanelScreen(
                 Text(servicio.toString())
             }
 
+
             Button(
                 onClick = onAgenda,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Abrir agenda")
             }
+
             Button(
                 onClick = onPacientes,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Ver pacientes")
             }
+
+            Button(
+                onClick = onServicios,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Administrar servicios")
+            }
+
+            Button(
+                onClick = onAjustes,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ajustes")
+            }
+
             OutlinedButton(
                 onClick = onCerrarSesion,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Cerrar sesión")
             }
+
         }
     }
 }

@@ -1,23 +1,19 @@
 package com.abad.huellitasvet.ui.navigation
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
 import com.abad.huellitasvet.data.prefs.PreferenciasStore
 import com.abad.huellitasvet.data.repository.VetRepository
 import com.abad.huellitasvet.ui.dueno.*
 import com.abad.huellitasvet.ui.veterinario.*
 import com.abad.huellitasvet.viewmodel.*
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 @Composable
 fun NavVet(
@@ -37,6 +33,31 @@ fun NavVet(
 
     val usuario by sesionViewModel.usuarioActual.collectAsState()
     val duenoId by sesionViewModel.usuarioId.collectAsState()
+    val modoOscuro by sesionViewModel.modoOscuro.collectAsState()
+
+    val notificacionesGuardadas by preferencias.notificaciones.collectAsState(
+        initial = true
+    )
+    val aceptarCitasGuardado by preferencias.aceptarCitas.collectAsState(
+        initial = true
+    )
+
+    val scope = rememberCoroutineScope()
+
+    val notificaciones = notificacionesGuardadas
+    val aceptarCitas = aceptarCitasGuardado
+
+    val cambiarNotificaciones: (Boolean) -> Unit = { valor ->
+        scope.launch {
+            preferencias.guardarNotificaciones(valor)
+        }
+    }
+
+    val cambiarAceptarCitas: (Boolean) -> Unit = { valor ->
+        scope.launch {
+            preferencias.guardarAceptarCitas(valor)
+        }
+    }
 
     val inicioFactory = remember(repository, duenoId) {
         object : ViewModelProvider.Factory {
@@ -115,6 +136,25 @@ fun NavVet(
         factory = pacientesFactory
     )
 
+    val serviciosFactory = remember(repository) {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                ServiciosViewModel(repository) as T
+        }
+    }
+    val serviciosViewModel: ServiciosViewModel = viewModel(
+        factory = serviciosFactory
+    )
+
+    fun cerrarSesion() {
+        sesionViewModel.cerrarSesion()
+        navController.navigate(Rutas.LOGIN) {
+            popUpTo(Rutas.SPLASH) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Rutas.SPLASH
@@ -181,13 +221,11 @@ fun NavVet(
         }
 
         composable("formulario_mascota/{mascotaId}") { entry ->
-            val id = entry.arguments
-                ?.getString("mascotaId")?.toIntOrNull()
-
             FormularioMascotaScreen(
                 viewModel = mascotaViewModel,
                 duenoId = duenoId,
-                mascotaId = id,
+                mascotaId = entry.arguments
+                    ?.getString("mascotaId")?.toIntOrNull(),
                 onVolver = { navController.popBackStack() }
             )
         }
@@ -228,20 +266,51 @@ fun NavVet(
             )
         }
 
+        composable(Rutas.PERFIL) {
+            val mascotas by inicioViewModel.mascotas.collectAsState()
+            val proximas by misCitasViewModel.proximas.collectAsState()
+            val historial by misCitasViewModel.historial.collectAsState()
+
+            PerfilScreen(
+                nombre = usuario?.nombre ?: "Usuario",
+                correo = usuario?.correo ?: "",
+                cantidadMascotas = mascotas.size,
+                citasProximas = proximas.size,
+                atenciones = historial.count {
+                    it.cita.estado == "ATENDIDA"
+                },
+                modoOscuro = modoOscuro,
+                notificaciones = notificaciones,
+                onModoOscuro = sesionViewModel::cambiarModoOscuro,
+                onNotificaciones = cambiarNotificaciones,
+                onCambiarPerfil = { cerrarSesion() },
+                onCerrarSesion = { cerrarSesion() },
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+
         composable(Rutas.PANEL) {
             PanelScreen(
                 viewModel = panelViewModel,
-                onAgenda = { navController.navigate(Rutas.AGENDA) },
-                onPacientes = { navController.navigate(Rutas.PACIENTES) },
+                onAgenda = {
+                    navController.navigate(Rutas.AGENDA)
+                },
+                onPacientes = {
+                    navController.navigate(Rutas.PACIENTES)
+                },
+                onServicios = {
+                    navController.navigate(Rutas.SERVICIOS)
+                },
+                onAjustes = {
+                    navController.navigate(Rutas.AJUSTES)
+                },
                 onCerrarSesion = {
-                    sesionViewModel.cerrarSesion()
-                    navController.navigate(Rutas.LOGIN) {
-                        popUpTo(Rutas.PANEL) { inclusive = true }
-                        launchSingleTop = true
-                    }
+                    cerrarSesion()
                 }
             )
         }
+
 
         composable(Rutas.AGENDA) {
             AgendaScreen(
@@ -253,7 +322,6 @@ fun NavVet(
             )
         }
 
-        // ATENDER CITA - COMMIT 13
         composable(Rutas.ATENDER_CITA) { entry ->
             val citaId = entry.arguments
                 ?.getString("citaId")?.toIntOrNull() ?: 0
@@ -278,7 +346,6 @@ fun NavVet(
             )
         }
 
-        // PACIENTES - COMMIT 13
         composable(Rutas.PACIENTES) {
             PacientesScreen(
                 viewModel = pacientesViewModel,
@@ -286,6 +353,51 @@ fun NavVet(
                 onFicha = { id ->
                     navController.navigate(Rutas.fichaMascota(id))
                 }
+            )
+        }
+
+        composable(Rutas.SERVICIOS) {
+            ServiciosScreen(
+                viewModel = serviciosViewModel,
+                onVolver = { navController.popBackStack() },
+                onNuevo = {
+                    navController.navigate(Rutas.FORMULARIO_SERVICIO)
+                },
+                onEditar = { id ->
+                    navController.navigate("formulario_servicio/$id")
+                }
+            )
+        }
+
+        composable(Rutas.FORMULARIO_SERVICIO) {
+            FormularioServicioScreen(
+                viewModel = serviciosViewModel,
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable("formulario_servicio/{servicioId}") { entry ->
+            FormularioServicioScreen(
+                viewModel = serviciosViewModel,
+                servicioId = entry.arguments
+                    ?.getString("servicioId")?.toIntOrNull(),
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable(Rutas.AJUSTES) {
+            AjustesScreen(
+                nombre = usuario?.nombre ?: "Veterinario",
+                correo = usuario?.correo ?: "",
+                modoOscuro = modoOscuro,
+                notificaciones = notificaciones,
+                aceptarCitas = aceptarCitas,
+                onModoOscuro = sesionViewModel::cambiarModoOscuro,
+                onNotificaciones = cambiarNotificaciones,
+                onAceptarCitas = cambiarAceptarCitas,
+                onCambiarPerfil = { cerrarSesion() },
+                onCerrarSesion = { cerrarSesion() },
+                onVolver = { navController.popBackStack() }
             )
         }
     }
