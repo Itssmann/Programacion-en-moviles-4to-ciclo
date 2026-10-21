@@ -14,8 +14,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.abad.huellitasvet.data.prefs.PreferenciasStore
 import com.abad.huellitasvet.data.repository.VetRepository
+import com.abad.huellitasvet.ui.dueno.InicioScreen
 import com.abad.huellitasvet.ui.dueno.LoginScreen
+import com.abad.huellitasvet.ui.dueno.MascotasScreen
 import com.abad.huellitasvet.ui.dueno.SplashScreen
+import com.abad.huellitasvet.viewmodel.InicioViewModel
 import com.abad.huellitasvet.viewmodel.SesionViewModel
 
 @Composable
@@ -25,66 +28,147 @@ fun NavVet(
 ) {
     val navController = rememberNavController()
 
-    val factory = remember(repository, preferencias) {
+    // ViewModel de sesión
+    val sesionFactory = remember(repository, preferencias) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return SesionViewModel(repository, preferencias) as T
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T {
+                return SesionViewModel(
+                    repository,
+                    preferencias
+                ) as T
             }
         }
     }
 
-    val sesionViewModel: SesionViewModel = viewModel(factory = factory)
+    val sesionViewModel: SesionViewModel = viewModel(
+        factory = sesionFactory
+    )
+
+    val usuario by sesionViewModel.usuarioActual.collectAsState()
+    val duenoId by sesionViewModel.usuarioId.collectAsState()
+
+    // ViewModel de inicio: depende del dueño actual
+    val inicioFactory = remember(repository, duenoId) {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T {
+                return InicioViewModel(
+                    repository,
+                    duenoId
+                ) as T
+            }
+        }
+    }
+
+    val inicioViewModel: InicioViewModel = viewModel(
+        key = "inicio_$duenoId",
+        factory = inicioFactory
+    )
 
     NavHost(
         navController = navController,
         startDestination = Rutas.SPLASH
     ) {
+
+        // 1. SPLASH
         composable(Rutas.SPLASH) {
-            SplashScreen(preferencias) { destino ->
-                navController.navigate(destino) {
-                    popUpTo(Rutas.SPLASH) { inclusive = true }
-                    launchSingleTop = true
-                }
-            }
-        }
-
-        composable(Rutas.LOGIN) {
-            LoginScreen(sesionViewModel) { rol ->
-                val destino = if (rol == "ADMIN") {
-                    Rutas.PANEL
-                } else {
-                    Rutas.INICIO
-                }
-
-                navController.navigate(destino) {
-                    popUpTo(Rutas.LOGIN) { inclusive = true }
-                    launchSingleTop = true
-                }
-            }
-        }
-
-        composable(Rutas.INICIO) {
-            PantallaTemporal(
-                titulo = "Inicio del dueño",
-                descripcion = "Próximamente: mascotas y próximas citas",
-                onCerrarSesion = {
-                    sesionViewModel.cerrarSesion()
-                    navController.navigate(Rutas.LOGIN) {
-                        popUpTo(Rutas.INICIO) { inclusive = true }
+            SplashScreen(
+                preferencias = preferencias,
+                onDestino = { destino ->
+                    navController.navigate(destino) {
+                        popUpTo(Rutas.SPLASH) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
                     }
                 }
             )
         }
 
+        // 2. LOGIN
+        composable(Rutas.LOGIN) {
+            LoginScreen(
+                viewModel = sesionViewModel,
+                onLoginExitoso = { rol ->
+                    val destino = if (rol == "ADMIN") {
+                        Rutas.PANEL
+                    } else {
+                        Rutas.INICIO
+                    }
+
+                    navController.navigate(destino) {
+                        popUpTo(Rutas.LOGIN) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        // 3. INICIO DEL DUEÑO
+        composable(Rutas.INICIO) {
+            InicioScreen(
+                nombreDueno = usuario?.nombre ?: "Bienvenido",
+                viewModel = inicioViewModel,
+                onMascotas = {
+                    navController.navigate(Rutas.MASCOTAS)
+                },
+                onAgregar = {
+                    navController.navigate(
+                        Rutas.FORMULARIO_MASCOTA
+                    )
+                },
+                onPedirCita = {
+                    navController.navigate(Rutas.PEDIR_CITA)
+                },
+                onMisCitas = {
+                    navController.navigate(Rutas.MIS_CITAS)
+                },
+                onPerfil = {
+                    navController.navigate(Rutas.PERFIL)
+                }
+            )
+        }
+
+        // 4. LISTA DE MASCOTAS
+        composable(Rutas.MASCOTAS) {
+            MascotasScreen(
+                viewModel = inicioViewModel,
+                onVolver = {
+                    navController.popBackStack()
+                },
+                onAgregar = {
+                    navController.navigate(
+                        Rutas.FORMULARIO_MASCOTA
+                    )
+                },
+                onAbrirMascota = { id ->
+                    navController.navigate(
+                        Rutas.fichaMascota(id)
+                    )
+                }
+            )
+        }
+
+        // 5. PANEL VETERINARIO
         composable(Rutas.PANEL) {
             PantallaTemporal(
                 titulo = "Panel veterinario",
                 descripcion = "Próximamente: agenda y estadísticas",
                 onCerrarSesion = {
                     sesionViewModel.cerrarSesion()
+
                     navController.navigate(Rutas.LOGIN) {
-                        popUpTo(Rutas.PANEL) { inclusive = true }
+                        popUpTo(Rutas.PANEL) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
                     }
                 }
             )
@@ -124,4 +208,3 @@ private fun PantallaTemporal(
         }
     }
 }
-
