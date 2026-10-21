@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.abad.huellitasvet.viewmodel.PanelViewModel
+import com.abad.huellitasvet.ui.components.graficos.GraficoDona
+import com.abad.huellitasvet.ui.components.graficos.GraficoBarras
 @Composable
 fun PanelScreen(
     viewModel: PanelViewModel,
@@ -96,24 +98,22 @@ fun PanelScreen(
                 style = MaterialTheme.typography.titleLarge
             )
 
-            val total = estados.sumOf { it.second }.coerceAtLeast(1)
-            estados.forEach { (nombre, cantidad) ->
-                Text("$nombre: $cantidad")
-                LinearProgressIndicator(
-                    progress = { cantidad.toFloat() / total },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            GraficoDona(
+                datos = estados,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Text(
                 "Citas por servicio",
                 style = MaterialTheme.typography.titleLarge
             )
 
-            servicios.forEach { servicio ->
-                Text(servicio.toString())
-            }
-
+            GraficoBarras(
+                datos = servicios.map { conteo ->
+                    conteo.nombre to conteo.cantidad
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Button(
                 onClick = onAgenda,
