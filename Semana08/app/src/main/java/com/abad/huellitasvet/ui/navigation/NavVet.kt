@@ -12,14 +12,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
 import com.abad.huellitasvet.data.prefs.PreferenciasStore
 import com.abad.huellitasvet.data.repository.VetRepository
-import com.abad.huellitasvet.ui.dueno.InicioScreen
-import com.abad.huellitasvet.ui.dueno.LoginScreen
-import com.abad.huellitasvet.ui.dueno.MascotasScreen
+
 import com.abad.huellitasvet.ui.dueno.SplashScreen
-import com.abad.huellitasvet.viewmodel.InicioViewModel
+import com.abad.huellitasvet.ui.dueno.LoginScreen
+import com.abad.huellitasvet.ui.dueno.InicioScreen
+import com.abad.huellitasvet.ui.dueno.MascotasScreen
+import com.abad.huellitasvet.ui.dueno.FormularioMascotaScreen
+import com.abad.huellitasvet.ui.dueno.FichaMascotaScreen
+
 import com.abad.huellitasvet.viewmodel.SesionViewModel
+import com.abad.huellitasvet.viewmodel.InicioViewModel
+import com.abad.huellitasvet.viewmodel.MascotaViewModel
 
 @Composable
 fun NavVet(
@@ -28,7 +34,9 @@ fun NavVet(
 ) {
     val navController = rememberNavController()
 
-    // ViewModel de sesión
+    // -----------------------------
+    // VIEWMODEL DE SESIÓN
+    // -----------------------------
     val sesionFactory = remember(repository, preferencias) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -50,7 +58,9 @@ fun NavVet(
     val usuario by sesionViewModel.usuarioActual.collectAsState()
     val duenoId by sesionViewModel.usuarioId.collectAsState()
 
-    // ViewModel de inicio: depende del dueño actual
+    // -----------------------------
+    // VIEWMODEL DE INICIO
+    // -----------------------------
     val inicioFactory = remember(repository, duenoId) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -70,6 +80,31 @@ fun NavVet(
         factory = inicioFactory
     )
 
+    // -----------------------------
+    // VIEWMODEL DE MASCOTAS
+    // -----------------------------
+    val mascotaFactory = remember(repository, duenoId) {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T {
+                return MascotaViewModel(
+                    repository,
+                    duenoId
+                ) as T
+            }
+        }
+    }
+
+    val mascotaViewModel: MascotaViewModel = viewModel(
+        key = "mascota_$duenoId",
+        factory = mascotaFactory
+    )
+
+    // -----------------------------
+    // GRAFO DE NAVEGACIÓN
+    // -----------------------------
     NavHost(
         navController = navController,
         startDestination = Rutas.SPLASH
@@ -156,7 +191,59 @@ fun NavVet(
             )
         }
 
-        // 5. PANEL VETERINARIO
+        // 5. REGISTRAR MASCOTA
+        composable(Rutas.FORMULARIO_MASCOTA) {
+            FormularioMascotaScreen(
+                viewModel = mascotaViewModel,
+                duenoId = duenoId,
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // 6. EDITAR MASCOTA
+        composable("formulario_mascota/{mascotaId}") { entry ->
+            val id = entry.arguments
+                ?.getString("mascotaId")
+                ?.toIntOrNull()
+
+            FormularioMascotaScreen(
+                viewModel = mascotaViewModel,
+                duenoId = duenoId,
+                mascotaId = id,
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // 7. FICHA DE MASCOTA E HISTORIAL
+        composable(Rutas.FICHA_MASCOTA) { entry ->
+            val id = entry.arguments
+                ?.getString("mascotaId")
+                ?.toIntOrNull() ?: 0
+
+            FichaMascotaScreen(
+                mascotaId = id,
+                viewModel = mascotaViewModel,
+                onVolver = {
+                    navController.popBackStack()
+                },
+                onEditar = {
+                    navController.navigate(
+                        "formulario_mascota/$id"
+                    )
+                },
+                onPedirCita = {
+                    navController.navigate(
+                        Rutas.PEDIR_CITA
+                    )
+                }
+            )
+        }
+
+        // 8. PANEL VETERINARIO (TEMPORAL)
         composable(Rutas.PANEL) {
             PantallaTemporal(
                 titulo = "Panel veterinario",
@@ -176,6 +263,7 @@ fun NavVet(
     }
 }
 
+// Pantalla temporal hasta implementar el panel veterinario.
 @Composable
 private fun PantallaTemporal(
     titulo: String,
