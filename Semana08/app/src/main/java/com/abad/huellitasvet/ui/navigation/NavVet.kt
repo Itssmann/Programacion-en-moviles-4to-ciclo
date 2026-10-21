@@ -23,11 +23,13 @@ import com.abad.huellitasvet.ui.dueno.MascotasScreen
 import com.abad.huellitasvet.ui.dueno.FormularioMascotaScreen
 import com.abad.huellitasvet.ui.dueno.FichaMascotaScreen
 import com.abad.huellitasvet.ui.dueno.PedirCitaScreen
+import com.abad.huellitasvet.ui.dueno.MisCitasScreen
 
 import com.abad.huellitasvet.viewmodel.SesionViewModel
 import com.abad.huellitasvet.viewmodel.InicioViewModel
 import com.abad.huellitasvet.viewmodel.MascotaViewModel
 import com.abad.huellitasvet.viewmodel.PedirCitaViewModel
+import com.abad.huellitasvet.viewmodel.MisCitasViewModel
 
 @Composable
 fun NavVet(
@@ -36,20 +38,13 @@ fun NavVet(
 ) {
     val navController = rememberNavController()
 
-    // ========================================
-    // VIEWMODEL DE SESIÓN
-    // ========================================
+    // SESIÓN
     val sesionFactory = remember(repository, preferencias) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(
                 modelClass: Class<T>
-            ): T {
-                return SesionViewModel(
-                    repository,
-                    preferencias
-                ) as T
-            }
+            ): T = SesionViewModel(repository, preferencias) as T
         }
     }
 
@@ -60,20 +55,13 @@ fun NavVet(
     val usuario by sesionViewModel.usuarioActual.collectAsState()
     val duenoId by sesionViewModel.usuarioId.collectAsState()
 
-    // ========================================
-    // VIEWMODEL DE INICIO
-    // ========================================
+    // INICIO
     val inicioFactory = remember(repository, duenoId) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(
                 modelClass: Class<T>
-            ): T {
-                return InicioViewModel(
-                    repository,
-                    duenoId
-                ) as T
-            }
+            ): T = InicioViewModel(repository, duenoId) as T
         }
     }
 
@@ -82,20 +70,13 @@ fun NavVet(
         factory = inicioFactory
     )
 
-    // ========================================
-    // VIEWMODEL DE MASCOTAS
-    // ========================================
+    // MASCOTAS
     val mascotaFactory = remember(repository, duenoId) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(
                 modelClass: Class<T>
-            ): T {
-                return MascotaViewModel(
-                    repository,
-                    duenoId
-                ) as T
-            }
+            ): T = MascotaViewModel(repository, duenoId) as T
         }
     }
 
@@ -104,20 +85,13 @@ fun NavVet(
         factory = mascotaFactory
     )
 
-    // ========================================
-    // VIEWMODEL PARA PEDIR CITAS
-    // ========================================
+    // PEDIR CITA
     val pedirCitaFactory = remember(repository, duenoId) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(
                 modelClass: Class<T>
-            ): T {
-                return PedirCitaViewModel(
-                    repository,
-                    duenoId
-                ) as T
-            }
+            ): T = PedirCitaViewModel(repository, duenoId) as T
         }
     }
 
@@ -126,9 +100,21 @@ fun NavVet(
         factory = pedirCitaFactory
     )
 
-    // ========================================
-    // NAVEGACIÓN DE HUELLITASVET
-    // ========================================
+    // MIS CITAS
+    val misCitasFactory = remember(repository, duenoId) {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T = MisCitasViewModel(repository, duenoId) as T
+        }
+    }
+
+    val misCitasViewModel: MisCitasViewModel = viewModel(
+        key = "mis_citas_$duenoId",
+        factory = misCitasFactory
+    )
+
     NavHost(
         navController = navController,
         startDestination = Rutas.SPLASH
@@ -170,7 +156,7 @@ fun NavVet(
             )
         }
 
-        // 3. INICIO DEL DUEÑO
+        // 3. INICIO
         composable(Rutas.INICIO) {
             InicioScreen(
                 nombreDueno = usuario?.nombre ?: "Bienvenido",
@@ -179,9 +165,7 @@ fun NavVet(
                     navController.navigate(Rutas.MASCOTAS)
                 },
                 onAgregar = {
-                    navController.navigate(
-                        Rutas.FORMULARIO_MASCOTA
-                    )
+                    navController.navigate(Rutas.FORMULARIO_MASCOTA)
                 },
                 onPedirCita = {
                     navController.navigate(Rutas.PEDIR_CITA)
@@ -195,22 +179,16 @@ fun NavVet(
             )
         }
 
-        // 4. LISTA DE MASCOTAS
+        // 4. MASCOTAS
         composable(Rutas.MASCOTAS) {
             MascotasScreen(
                 viewModel = inicioViewModel,
-                onVolver = {
-                    navController.popBackStack()
-                },
+                onVolver = { navController.popBackStack() },
                 onAgregar = {
-                    navController.navigate(
-                        Rutas.FORMULARIO_MASCOTA
-                    )
+                    navController.navigate(Rutas.FORMULARIO_MASCOTA)
                 },
                 onAbrirMascota = { id ->
-                    navController.navigate(
-                        Rutas.fichaMascota(id)
-                    )
+                    navController.navigate(Rutas.fichaMascota(id))
                 }
             )
         }
@@ -220,9 +198,7 @@ fun NavVet(
             FormularioMascotaScreen(
                 viewModel = mascotaViewModel,
                 duenoId = duenoId,
-                onVolver = {
-                    navController.popBackStack()
-                }
+                onVolver = { navController.popBackStack() }
             )
         }
 
@@ -236,13 +212,11 @@ fun NavVet(
                 viewModel = mascotaViewModel,
                 duenoId = duenoId,
                 mascotaId = id,
-                onVolver = {
-                    navController.popBackStack()
-                }
+                onVolver = { navController.popBackStack() }
             )
         }
 
-        // 7. FICHA DE MASCOTA E HISTORIAL
+        // 7. FICHA E HISTORIAL CLÍNICO
         composable(Rutas.FICHA_MASCOTA) { entry ->
             val id = entry.arguments
                 ?.getString("mascotaId")
@@ -251,18 +225,12 @@ fun NavVet(
             FichaMascotaScreen(
                 mascotaId = id,
                 viewModel = mascotaViewModel,
-                onVolver = {
-                    navController.popBackStack()
-                },
+                onVolver = { navController.popBackStack() },
                 onEditar = {
-                    navController.navigate(
-                        "formulario_mascota/$id"
-                    )
+                    navController.navigate("formulario_mascota/$id")
                 },
                 onPedirCita = {
-                    navController.navigate(
-                        Rutas.PEDIR_CITA
-                    )
+                    navController.navigate(Rutas.PEDIR_CITA)
                 }
             )
         }
@@ -271,15 +239,11 @@ fun NavVet(
         composable(Rutas.PEDIR_CITA) {
             PedirCitaScreen(
                 viewModel = pedirCitaViewModel,
-                onVolver = {
-                    navController.popBackStack()
-                },
+                onVolver = { navController.popBackStack() },
                 onConfirmada = {
-                    // Temporalmente regresa a Inicio.
-                    // En el commit 11 irá a Mis Citas.
-                    navController.navigate(Rutas.INICIO) {
-                        popUpTo(Rutas.INICIO) {
-                            inclusive = false
+                    navController.navigate(Rutas.MIS_CITAS) {
+                        popUpTo(Rutas.PEDIR_CITA) {
+                            inclusive = true
                         }
                         launchSingleTop = true
                     }
@@ -287,7 +251,18 @@ fun NavVet(
             )
         }
 
-        // 9. PANEL VETERINARIO (TEMPORAL)
+        // 9. MIS CITAS
+        composable(Rutas.MIS_CITAS) {
+            MisCitasScreen(
+                viewModel = misCitasViewModel,
+                onVolver = { navController.popBackStack() },
+                onPedirCita = {
+                    navController.navigate(Rutas.PEDIR_CITA)
+                }
+            )
+        }
+
+        // 10. PANEL VETERINARIO TEMPORAL
         composable(Rutas.PANEL) {
             PantallaTemporal(
                 titulo = "Panel veterinario",
@@ -307,9 +282,6 @@ fun NavVet(
     }
 }
 
-// ========================================
-// PANTALLA TEMPORAL DEL VETERINARIO
-// ========================================
 @Composable
 private fun PantallaTemporal(
     titulo: String,
@@ -326,7 +298,7 @@ private fun PantallaTemporal(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = titulo,
+                titulo,
                 style = MaterialTheme.typography.headlineMedium
             )
 
