@@ -9,11 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.abad.huellitasvet.viewmodel.PanelViewModel
-
 @Composable
 fun PanelScreen(
     viewModel: PanelViewModel,
     onAgenda: () -> Unit,
+    onPacientes: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     val citasHoy by viewModel.citasHoy.collectAsState()
@@ -118,7 +118,12 @@ fun PanelScreen(
             ) {
                 Text("Abrir agenda")
             }
-
+            Button(
+                onClick = onPacientes,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ver pacientes")
+            }
             OutlinedButton(
                 onClick = onCerrarSesion,
                 modifier = Modifier.fillMaxWidth()

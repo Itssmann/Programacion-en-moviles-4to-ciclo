@@ -16,8 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import com.abad.huellitasvet.data.prefs.PreferenciasStore
 import com.abad.huellitasvet.data.repository.VetRepository
 import com.abad.huellitasvet.ui.dueno.*
-import com.abad.huellitasvet.ui.veterinario.PanelScreen
-import com.abad.huellitasvet.ui.veterinario.AgendaScreen
+import com.abad.huellitasvet.ui.veterinario.*
 import com.abad.huellitasvet.viewmodel.*
 
 @Composable
@@ -34,9 +33,7 @@ fun NavVet(
                 SesionViewModel(repository, preferencias) as T
         }
     }
-    val sesionViewModel: SesionViewModel = viewModel(
-        factory = sesionFactory
-    )
+    val sesionViewModel: SesionViewModel = viewModel(factory = sesionFactory)
 
     val usuario by sesionViewModel.usuarioActual.collectAsState()
     val duenoId by sesionViewModel.usuarioId.collectAsState()
@@ -96,9 +93,7 @@ fun NavVet(
                 PanelViewModel(repository) as T
         }
     }
-    val panelViewModel: PanelViewModel = viewModel(
-        factory = panelFactory
-    )
+    val panelViewModel: PanelViewModel = viewModel(factory = panelFactory)
 
     val agendaFactory = remember(repository) {
         object : ViewModelProvider.Factory {
@@ -107,8 +102,17 @@ fun NavVet(
                 AgendaViewModel(repository) as T
         }
     }
-    val agendaViewModel: AgendaViewModel = viewModel(
-        factory = agendaFactory
+    val agendaViewModel: AgendaViewModel = viewModel(factory = agendaFactory)
+
+    val pacientesFactory = remember(repository) {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                PacientesViewModel(repository) as T
+        }
+    }
+    val pacientesViewModel: PacientesViewModel = viewModel(
+        factory = pacientesFactory
     )
 
     NavHost(
@@ -224,11 +228,11 @@ fun NavVet(
             )
         }
 
-        // PANEL VETERINARIO
         composable(Rutas.PANEL) {
             PanelScreen(
                 viewModel = panelViewModel,
                 onAgenda = { navController.navigate(Rutas.AGENDA) },
+                onPacientes = { navController.navigate(Rutas.PACIENTES) },
                 onCerrarSesion = {
                     sesionViewModel.cerrarSesion()
                     navController.navigate(Rutas.LOGIN) {
@@ -239,7 +243,6 @@ fun NavVet(
             )
         }
 
-        // AGENDA VETERINARIA
         composable(Rutas.AGENDA) {
             AgendaScreen(
                 viewModel = agendaViewModel,
@@ -250,26 +253,40 @@ fun NavVet(
             )
         }
 
-        // PANTALLA TEMPORAL HASTA EL COMMIT 13
-        composable(Rutas.ATENDER_CITA) {
-            Scaffold { padding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "Atención de cita",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Text("Se implementará en el commit 13")
-                    Button(onClick = { navController.popBackStack() }) {
-                        Text("Volver")
-                    }
+        // ATENDER CITA - COMMIT 13
+        composable(Rutas.ATENDER_CITA) { entry ->
+            val citaId = entry.arguments
+                ?.getString("citaId")?.toIntOrNull() ?: 0
+
+            val factory = remember(repository, citaId) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(
+                        modelClass: Class<T>
+                    ): T = AtenderCitaViewModel(repository, citaId) as T
                 }
             }
+
+            val vm: AtenderCitaViewModel = viewModel(
+                key = "atender_$citaId",
+                factory = factory
+            )
+
+            AtenderCitaScreen(
+                viewModel = vm,
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        // PACIENTES - COMMIT 13
+        composable(Rutas.PACIENTES) {
+            PacientesScreen(
+                viewModel = pacientesViewModel,
+                onVolver = { navController.popBackStack() },
+                onFicha = { id ->
+                    navController.navigate(Rutas.fichaMascota(id))
+                }
+            )
         }
     }
 }
