@@ -1,47 +1,27 @@
+
 package com.abad.huellitasvet
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.abad.huellitasvet.ui.theme.HuellitasVetTheme
+import com.abad.huellitasvet.data.prefs.PreferenciasStore
+import com.abad.huellitasvet.data.repository.VetRepositoryRoom
+import com.abad.huellitasvet.ui.navigation.NavVet
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        val app = application as VetApp
+        val repository = VetRepositoryRoom(app.database)
+        val preferencias = PreferenciasStore(applicationContext)
+
         setContent {
-            HuellitasVetTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            NavVet(
+                repository = repository,
+                preferencias = preferencias
+            )
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    HuellitasVetTheme {
-        Greeting("Android")
     }
 }
