@@ -22,10 +22,12 @@ import com.abad.huellitasvet.ui.dueno.InicioScreen
 import com.abad.huellitasvet.ui.dueno.MascotasScreen
 import com.abad.huellitasvet.ui.dueno.FormularioMascotaScreen
 import com.abad.huellitasvet.ui.dueno.FichaMascotaScreen
+import com.abad.huellitasvet.ui.dueno.PedirCitaScreen
 
 import com.abad.huellitasvet.viewmodel.SesionViewModel
 import com.abad.huellitasvet.viewmodel.InicioViewModel
 import com.abad.huellitasvet.viewmodel.MascotaViewModel
+import com.abad.huellitasvet.viewmodel.PedirCitaViewModel
 
 @Composable
 fun NavVet(
@@ -34,9 +36,9 @@ fun NavVet(
 ) {
     val navController = rememberNavController()
 
-    // -----------------------------
+    // ========================================
     // VIEWMODEL DE SESIÓN
-    // -----------------------------
+    // ========================================
     val sesionFactory = remember(repository, preferencias) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -58,9 +60,9 @@ fun NavVet(
     val usuario by sesionViewModel.usuarioActual.collectAsState()
     val duenoId by sesionViewModel.usuarioId.collectAsState()
 
-    // -----------------------------
+    // ========================================
     // VIEWMODEL DE INICIO
-    // -----------------------------
+    // ========================================
     val inicioFactory = remember(repository, duenoId) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -80,9 +82,9 @@ fun NavVet(
         factory = inicioFactory
     )
 
-    // -----------------------------
+    // ========================================
     // VIEWMODEL DE MASCOTAS
-    // -----------------------------
+    // ========================================
     val mascotaFactory = remember(repository, duenoId) {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -102,9 +104,31 @@ fun NavVet(
         factory = mascotaFactory
     )
 
-    // -----------------------------
-    // GRAFO DE NAVEGACIÓN
-    // -----------------------------
+    // ========================================
+    // VIEWMODEL PARA PEDIR CITAS
+    // ========================================
+    val pedirCitaFactory = remember(repository, duenoId) {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T {
+                return PedirCitaViewModel(
+                    repository,
+                    duenoId
+                ) as T
+            }
+        }
+    }
+
+    val pedirCitaViewModel: PedirCitaViewModel = viewModel(
+        key = "pedir_cita_$duenoId",
+        factory = pedirCitaFactory
+    )
+
+    // ========================================
+    // NAVEGACIÓN DE HUELLITASVET
+    // ========================================
     NavHost(
         navController = navController,
         startDestination = Rutas.SPLASH
@@ -243,7 +267,27 @@ fun NavVet(
             )
         }
 
-        // 8. PANEL VETERINARIO (TEMPORAL)
+        // 8. PEDIR CITA
+        composable(Rutas.PEDIR_CITA) {
+            PedirCitaScreen(
+                viewModel = pedirCitaViewModel,
+                onVolver = {
+                    navController.popBackStack()
+                },
+                onConfirmada = {
+                    // Temporalmente regresa a Inicio.
+                    // En el commit 11 irá a Mis Citas.
+                    navController.navigate(Rutas.INICIO) {
+                        popUpTo(Rutas.INICIO) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        // 9. PANEL VETERINARIO (TEMPORAL)
         composable(Rutas.PANEL) {
             PantallaTemporal(
                 titulo = "Panel veterinario",
@@ -263,7 +307,9 @@ fun NavVet(
     }
 }
 
-// Pantalla temporal hasta implementar el panel veterinario.
+// ========================================
+// PANTALLA TEMPORAL DEL VETERINARIO
+// ========================================
 @Composable
 private fun PantallaTemporal(
     titulo: String,
