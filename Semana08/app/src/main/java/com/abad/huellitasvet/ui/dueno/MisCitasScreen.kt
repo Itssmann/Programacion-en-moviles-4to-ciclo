@@ -15,8 +15,8 @@ import com.abad.huellitasvet.viewmodel.MisCitasViewModel
 @Composable
 fun MisCitasScreen(
     viewModel: MisCitasViewModel,
-    onVolver: () -> Unit,
-    onPedirCita: () -> Unit
+    onPedirCita: () -> Unit,
+    bottomBar: @Composable () -> Unit = {}
 ) {
     val proximas by viewModel.proximas.collectAsState()
     val historial by viewModel.historial.collectAsState()
@@ -55,15 +55,11 @@ fun MisCitasScreen(
     Scaffold(
         topBar = {
             Column {
-                TextButton(onClick = onVolver) {
-                    Text("← Volver")
-                }
                 Text(
                     "Mis citas",
-                    modifier = Modifier.padding(horizontal = 20.dp),
+                    modifier = Modifier.padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 12.dp),
                     style = MaterialTheme.typography.headlineMedium
                 )
-                Spacer(Modifier.height(12.dp))
                 TabRow(selectedTabIndex = pestana) {
                     Tab(
                         selected = pestana == 0,
@@ -84,6 +80,7 @@ fun MisCitasScreen(
                 }
             }
         },
+        bottomBar = bottomBar,
         floatingActionButton = {
             FloatingActionButton(onClick = onPedirCita) {
                 Text("+")
@@ -143,5 +140,3 @@ fun MisCitasScreen(
         }
     }
 }
-
-

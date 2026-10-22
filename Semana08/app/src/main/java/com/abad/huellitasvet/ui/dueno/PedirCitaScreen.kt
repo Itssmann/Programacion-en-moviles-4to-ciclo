@@ -14,7 +14,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PedirCitaScreen(
     viewModel: PedirCitaViewModel,
@@ -32,6 +32,7 @@ fun PedirCitaScreen(
     val error by viewModel.error.collectAsState()
     val confirmada by viewModel.confirmada.collectAsState()
     val guardando by viewModel.guardando.collectAsState()
+    val aceptarCitas by viewModel.aceptarCitas.collectAsState()
 
     val servicioElegido = servicios.find { it.id == servicioId }
     val mascotaElegida = mascotas.find { it.id == mascotaId }
@@ -42,9 +43,14 @@ fun PedirCitaScreen(
 
     Scaffold(
         topBar = {
-            TextButton(onClick = onVolver) {
-                Text("← Volver")
-            }
+            TopAppBar(
+                title = { Text("Pedir cita") },
+                navigationIcon = {
+                    IconButton(onClick = onVolver) {
+                        Text("←", style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+            )
         }
     ) { padding ->
         Column(
@@ -200,12 +206,28 @@ fun PedirCitaScreen(
                 )
             }
 
+            if (!aceptarCitas) {
+                ElevatedCard(
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "La clínica no está aceptando nuevas citas en este momento",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
             Button(
                 onClick = viewModel::confirmar,
                 enabled = mascotaId != null &&
                         servicioId != null &&
                         hora != null &&
-                        !guardando,
+                        !guardando &&
+                        aceptarCitas,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
@@ -215,4 +237,3 @@ fun PedirCitaScreen(
         }
     }
 }
-

@@ -1,4 +1,3 @@
-
 package com.abad.huellitasvet.ui.dueno
 
 import androidx.compose.foundation.layout.*
@@ -13,13 +12,15 @@ import com.abad.huellitasvet.ui.components.MascotaAvatar
 import com.abad.huellitasvet.viewmodel.MascotaViewModel
 import java.time.LocalDate
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FichaMascotaScreen(
     mascotaId: Int,
     viewModel: MascotaViewModel,
     onVolver: () -> Unit,
     onEditar: () -> Unit,
-    onPedirCita: () -> Unit
+    onPedirCita: () -> Unit,
+    bottomBar: @Composable () -> Unit = {}
 ) {
     val detalle by remember(mascotaId) {
         viewModel.mascota(mascotaId)
@@ -36,10 +37,16 @@ fun FichaMascotaScreen(
 
     Scaffold(
         topBar = {
-            TextButton(onClick = onVolver) {
-                Text("← Volver a mascotas")
-            }
-        }
+            TopAppBar(
+                title = { Text(mascota?.nombre ?: "Ficha de mascota") },
+                navigationIcon = {
+                    IconButton(onClick = onVolver) {
+                        Text("←", style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+            )
+        },
+        bottomBar = bottomBar
     ) { padding ->
         if (mascota == null) {
             Box(

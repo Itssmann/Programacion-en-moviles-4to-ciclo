@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.abad.huellitasvet.data.local.entity.Mascota
 import com.abad.huellitasvet.data.local.entity.Servicio
+import com.abad.huellitasvet.data.prefs.PreferenciasStore
 import com.abad.huellitasvet.data.repository.VetRepository
 import com.abad.huellitasvet.model.Horarios
 import kotlinx.coroutines.flow.*
@@ -14,8 +15,16 @@ import java.time.LocalTime
 
 class PedirCitaViewModel(
     private val repository: VetRepository,
-    private val duenoId: Int
+    private val duenoId: Int,
+    preferencias: PreferenciasStore
 ) : ViewModel() {
+
+    val aceptarCitas: StateFlow<Boolean> =
+        preferencias.aceptarCitas.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            true
+        )
 
     val mascotas: StateFlow<List<Mascota>> =
         repository.observarMascotas(duenoId)
@@ -131,6 +140,10 @@ class PedirCitaViewModel(
             _error.value = null
 
             try {
+                require(aceptarCitas.value) {
+                    "La clínica no está aceptando nuevas citas en este momento"
+                }
+
                 val hoy = LocalDate.now()
                 val dia = _fecha.value
 

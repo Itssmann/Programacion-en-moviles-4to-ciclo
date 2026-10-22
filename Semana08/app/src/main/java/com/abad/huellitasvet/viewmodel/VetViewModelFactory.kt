@@ -24,7 +24,7 @@ class VetViewModelFactory(
                 MascotaViewModel(repository, duenoId) as T
 
             modelClass.isAssignableFrom(PedirCitaViewModel::class.java) ->
-                PedirCitaViewModel(repository, duenoId) as T
+                PedirCitaViewModel(repository, duenoId, preferencias) as T
 
             modelClass.isAssignableFrom(MisCitasViewModel::class.java) ->
                 MisCitasViewModel(repository, duenoId) as T

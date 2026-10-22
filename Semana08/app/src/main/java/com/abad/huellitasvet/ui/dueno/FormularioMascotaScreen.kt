@@ -12,6 +12,7 @@ import com.abad.huellitasvet.data.local.entity.Mascota
 import com.abad.huellitasvet.ui.components.MascotaAvatar
 import com.abad.huellitasvet.viewmodel.MascotaViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioMascotaScreen(
     viewModel: MascotaViewModel,
@@ -56,10 +57,13 @@ fun FormularioMascotaScreen(
 
     Scaffold(
         topBar = {
-            Text(
-                if (mascotaId == null) "Nueva mascota" else "Editar mascota",
-                modifier = Modifier.padding(20.dp),
-                style = MaterialTheme.typography.headlineSmall
+            TopAppBar(
+                title = { Text(if (mascotaId == null) "Nueva mascota" else "Editar mascota") },
+                navigationIcon = {
+                    IconButton(onClick = onVolver) {
+                        Text("←", style = MaterialTheme.typography.titleLarge)
+                    }
+                }
             )
         }
     ) { padding ->

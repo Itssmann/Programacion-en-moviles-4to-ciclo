@@ -15,36 +15,24 @@ import com.abad.huellitasvet.ui.components.MascotaAvatar
 import com.abad.huellitasvet.viewmodel.InicioViewModel
 import java.time.LocalDate
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MascotasScreen(
     viewModel: InicioViewModel,
-    onVolver: () -> Unit,
     onAgregar: () -> Unit,
-    onAbrirMascota: (Int) -> Unit
+    onAbrirMascota: (Int) -> Unit,
+    bottomBar: @Composable () -> Unit = {}
 ) {
     val mascotas by viewModel.mascotas.collectAsState()
     val anioActual = LocalDate.now().year
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 2.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = onVolver) {
-                        Text("← Volver")
-                    }
-                    Text(
-                        "Mis mascotas",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+            TopAppBar(
+                title = { Text("Mis mascotas", fontWeight = FontWeight.Bold) }
+            )
         },
+        bottomBar = bottomBar,
         floatingActionButton = {
             FloatingActionButton(onClick = onAgregar) {
                 Text("+", style = MaterialTheme.typography.headlineMedium)
