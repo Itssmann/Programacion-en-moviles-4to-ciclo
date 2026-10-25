@@ -21,6 +21,7 @@ fun MascotasScreen(
     viewModel: InicioViewModel,
     onAgregar: () -> Unit,
     onAbrirMascota: (Int) -> Unit,
+    onVolver: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
 ) {
     val mascotas by viewModel.mascotas.collectAsState()
@@ -29,12 +30,37 @@ fun MascotasScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis mascotas", fontWeight = FontWeight.Bold) }
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Mis mascotas",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onVolver) {
+                        Text("←", style = MaterialTheme.typography.titleLarge)
+                    }
+                },
+                actions = {
+                    Spacer(Modifier.width(48.dp))
+                }
             )
         },
         bottomBar = bottomBar,
         floatingActionButton = {
-            FloatingActionButton(onClick = onAgregar) {
+            FloatingActionButton(
+                onClick = onAgregar,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.size(64.dp)
+            ) {
                 Text("+", style = MaterialTheme.typography.headlineMedium)
             }
         }
@@ -61,24 +87,40 @@ fun MascotasScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onAbrirMascota(mascota.id) },
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            MascotaAvatar(especie = mascota.especie)
+                            MascotaAvatar(
+                                especie = mascota.especie,
+                                modifier = Modifier.size(56.dp)
+                            )
 
-                            Column {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
                                 Text(
-                                    mascota.nombre,
+                                    text = mascota.nombre,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Text("${mascota.especie} · ${mascota.raza}")
                                 Text(
-                                    "${anioActual - mascota.anioNacimiento} años"
+                                    text = "${mascota.especie} · ${mascota.raza}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${anioActual - mascota.anioNacimiento} años",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

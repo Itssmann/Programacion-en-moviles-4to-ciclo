@@ -36,7 +36,7 @@ fun InicioScreen(
     val proximaCita by viewModel.proximaCita.collectAsState()
 
     val primerNombre = remember(nombreDueno) {
-        val limpio = if (nombreDueno == "Bienvenido" || nombreDueno.isBlank()) "Ana Torres" else nombreDueno
+        val limpio = if (nombreDueno == "Bienvenido" || nombreDueno.isBlank()) "Ana" else nombreDueno
         limpio.split(" ").firstOrNull() ?: limpio
     }
 
@@ -184,13 +184,15 @@ fun InicioScreen(
                 )
             } else {
                 Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     mascotas.forEach { mascota ->
                         ElevatedCard(
                             onClick = onMascotas,
-                            modifier = Modifier.width(102.dp),
+                            modifier = Modifier.width(105.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.elevatedCardColors(
                                 containerColor = MaterialTheme.colorScheme.surface
@@ -203,7 +205,7 @@ fun InicioScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                MascotaAvatar(especie = mascota.especie, modifier = Modifier.size(48.dp))
+                                MascotaAvatar(especie = mascota.especie, modifier = Modifier.size(52.dp))
                                 Text(
                                     mascota.nombre,
                                     fontWeight = FontWeight.Bold,
@@ -223,8 +225,8 @@ fun InicioScreen(
                     Surface(
                         onClick = onAgregar,
                         modifier = Modifier
-                            .width(96.dp)
-                            .height(96.dp),
+                            .width(105.dp)
+                            .height(106.dp),
                         shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
@@ -238,7 +240,7 @@ fun InicioScreen(
                         ) {
                             Text(
                                 "+",
-                                style = MaterialTheme.typography.headlineLarge,
+                                style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
                             )
