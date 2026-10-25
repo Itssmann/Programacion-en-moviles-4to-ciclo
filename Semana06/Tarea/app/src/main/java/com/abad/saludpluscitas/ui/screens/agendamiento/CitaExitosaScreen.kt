@@ -13,12 +13,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.abad.saludpluscitas.data.repository.Repositorio
 import com.abad.saludpluscitas.ui.components.BotonSaludPlus
 
 @Composable
 fun CitaExitosaScreen(
     onVerCitas: () -> Unit
 ) {
+    val citaInfo = Repositorio.ultimaCitaRegistrada
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -26,7 +29,7 @@ fun CitaExitosaScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
@@ -34,38 +37,85 @@ fun CitaExitosaScreen(
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(110.dp)
+                modifier = Modifier.size(90.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = "Cita Exitosa",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(70.dp)
+                        modifier = Modifier.size(60.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "¡Cita registrada!",
-                fontSize = 26.sp,
+                text = "Tu cita ha sido confirmada",
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Tu cita médica se ha reservado con éxito. Puedes revisar el estado en la sección de Mis Citas.",
-                fontSize = 14.sp,
+                text = "Tu cita médica se ha reservado con éxito.",
+                fontSize = 13.sp,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 20.sp
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (citaInfo != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Médico: ${citaInfo.medicoNombre}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Especialidad: ${citaInfo.especialidad}",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Sede: ${citaInfo.sede}",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Fecha: ${citaInfo.fecha}",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Hora: ${citaInfo.hora}",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -77,7 +127,7 @@ fun CitaExitosaScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(

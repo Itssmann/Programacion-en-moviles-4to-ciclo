@@ -8,6 +8,7 @@ sealed class Rutas(val ruta: String) {
     object Terminos : Rutas("terminos")
 
     object Inicio : Rutas("inicio")
+    object Sedes : Rutas("sedes")
     object Especialidades : Rutas("especialidades")
     object Medicos : Rutas("medicos/{especialidadId}")
     object FechaHora : Rutas("fechaHora/{medicoId}")
