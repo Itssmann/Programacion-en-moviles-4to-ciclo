@@ -40,6 +40,14 @@ class MascotaViewModel(
                 emptyList()
             )
 
+    fun pesosHistorial(mascotaId: Int): StateFlow<List<CitaConDetalle>> =
+        repository.observarPesosHistorial(mascotaId)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                emptyList()
+            )
+
     fun limpiarEstado() {
         _errores.value = emptyMap()
         _mensaje.value = null

@@ -50,5 +50,6 @@ interface VetRepository {
     fun contarCitasEstado(estado: String): Flow<Int>
     fun contarPorServicio(): Flow<List<ConteoServicio>>
     fun ingresosDesde(fechaInicio: String): Flow<Double>
+    fun observarPesosHistorial(mascotaId: Int): Flow<List<CitaConDetalle>>
 }
 

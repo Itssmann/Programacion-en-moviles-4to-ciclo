@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.abad.huellitasvet.ui.components.MascotaAvatar
+import com.abad.huellitasvet.ui.components.graficos.GraficoLineas
 import com.abad.huellitasvet.viewmodel.MascotaViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -36,6 +37,10 @@ fun FichaMascotaScreen(
 
     val historial by remember(mascotaId) {
         viewModel.historial(mascotaId)
+    }.collectAsState()
+
+    val pesosHistorial by remember(mascotaId) {
+        viewModel.pesosHistorial(mascotaId)
     }.collectAsState()
 
     val mensaje by viewModel.mensaje.collectAsState()
@@ -90,6 +95,14 @@ fun FichaMascotaScreen(
             val edad = LocalDate.now().year - mascota.anioNacimiento
             val especieRaza = "${mascota.especie.lowercase().replaceFirstChar { it.uppercase() }} · ${mascota.raza}"
             val sexoPeso = "$edad años · ${mascota.sexo.lowercase().replaceFirstChar { it.uppercase() }} · ${mascota.peso} kg"
+
+            val puntosGrafico = pesosHistorial.map { item ->
+                val fechaFormateada = runCatching {
+                    LocalDate.parse(item.cita.fecha)
+                        .format(DateTimeFormatter.ofPattern("dd MMM", Locale.forLanguageTag("es")))
+                }.getOrDefault(item.cita.fecha)
+                fechaFormateada to (item.cita.pesoRegistrado ?: mascota.peso)
+            }
 
             Column(
                 modifier = Modifier
@@ -285,6 +298,10 @@ fun FichaMascotaScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(bottom = 20.dp)
                         ) {
+                            item {
+                                GraficoLineas(datos = puntosGrafico)
+                            }
+
                             items(historial, key = { it.cita.id }) { item ->
                                 val fechaFormateada = runCatching {
                                     LocalDate.parse(item.cita.fecha)

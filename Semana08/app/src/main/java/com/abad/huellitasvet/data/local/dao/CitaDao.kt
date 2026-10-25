@@ -92,6 +92,14 @@ interface CitaDao {
     """)
     fun contarPorServicio(): Flow<List<ConteoServicio>>
 
+    @Transaction
+    @Query("""
+        SELECT * FROM citas
+        WHERE mascotaId = :mascotaId AND estado = 'ATENDIDA' AND pesoRegistrado IS NOT NULL
+        ORDER BY fecha ASC, hora ASC
+    """)
+    fun observarPesosHistorial(mascotaId: Int): Flow<List<CitaConDetalle>>
+
     @Query("""
         SELECT COALESCE(SUM(precio), 0.0) FROM citas
         WHERE estado = 'ATENDIDA' AND fecha >= :fechaInicio

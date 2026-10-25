@@ -158,5 +158,8 @@ class VetRepositoryRoom(
 
     override fun ingresosDesde(fechaInicio: String): Flow<Double> =
         citas.ingresosDesde(fechaInicio)
+
+    override fun observarPesosHistorial(mascotaId: Int): Flow<List<CitaConDetalle>> =
+        citas.observarPesosHistorial(mascotaId)
 }
 
