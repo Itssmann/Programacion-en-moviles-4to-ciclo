@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +28,7 @@ fun PacientesScreen(
 ) {
     val pacientes by viewModel.pacientes.collectAsState()
     val busqueda by viewModel.busqueda.collectAsState()
-    var especie by remember { mutableStateOf("TODOS") }
+    val especie by viewModel.especieFiltro.collectAsState()
 
     Scaffold(
         topBar = {
@@ -75,6 +76,17 @@ fun PacientesScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
+                trailingIcon = {
+                    if (busqueda.isNotBlank()) {
+                        IconButton(onClick = viewModel::limpiarBusqueda) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Limpiar búsqueda",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -100,7 +112,7 @@ fun PacientesScreen(
                     val seleccionado = especie == opcion
                     FilterChip(
                         selected = seleccionado,
-                        onClick = { especie = opcion },
+                        onClick = { viewModel.filtrarEspecie(opcion) },
                         label = { Text(label, fontWeight = FontWeight.SemiBold) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -108,23 +120,31 @@ fun PacientesScreen(
                             containerColor = MaterialTheme.colorScheme.surface,
                             labelColor = MaterialTheme.colorScheme.onSurface
                         ),
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
 
-            val filtrados = pacientes.filter {
-                especie == "TODOS" || it.mascota.especie == especie
-            }
+            // Results count
+            Text(
+                text = "${pacientes.size} pacientes encontrados",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-            if (filtrados.isEmpty()) {
+            if (pacientes.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No se encontraron pacientes")
+                    Text(
+                        "No se encontraron pacientes",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             } else {
                 LazyColumn(
@@ -134,7 +154,7 @@ fun PacientesScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(bottom = 20.dp)
                 ) {
-                    items(filtrados, key = { it.mascota.id }) { paciente ->
+                    items(pacientes, key = { it.mascota.id }) { paciente ->
                         ElevatedCard(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -171,7 +191,7 @@ fun PacientesScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "Dueña: ${paciente.dueno.nombre}",
+                                        text = "Dueño: ${paciente.dueno.nombre}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
