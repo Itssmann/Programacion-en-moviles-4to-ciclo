@@ -161,5 +161,11 @@ class VetRepositoryRoom(
 
     override fun observarPesosHistorial(mascotaId: Int): Flow<List<CitaConDetalle>> =
         citas.observarPesosHistorial(mascotaId)
+
+    override suspend fun reprogramarCita(id: Int, fecha: String, hora: String) =
+        citas.reprogramarCita(id, fecha, hora)
+
+    override suspend fun contarOcupadasExcluyendo(fecha: String, hora: String, citaId: Int): Int =
+        citas.contarOcupadasExcluyendo(fecha, hora, citaId)
 }
 

@@ -36,6 +36,17 @@ interface CitaDao {
     @Query("SELECT * FROM citas WHERE id = :id")
     suspend fun obtener(id: Int): Cita?
 
+    @Query("UPDATE citas SET fecha = :fecha, hora = :hora WHERE id = :id")
+    suspend fun reprogramarCita(id: Int, fecha: String, hora: String)
+
+    @Query("""
+        SELECT COUNT(*) FROM citas
+        WHERE fecha = :fecha AND hora = :hora
+        AND id != :citaId
+        AND estado != 'CANCELADA'
+    """)
+    suspend fun contarOcupadasExcluyendo(fecha: String, hora: String, citaId: Int): Int
+
     @Query("""
         SELECT COUNT(*) FROM citas
         WHERE fecha = :fecha AND hora = :hora

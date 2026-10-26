@@ -11,7 +11,9 @@ import com.abad.huellitasvet.data.local.relation.CitaConDetalle
 fun CitaCard(
     detalle: CitaConDetalle,
     mostrarCancelar: Boolean = false,
-    onCancelar: () -> Unit = {}
+    onCancelar: () -> Unit = {},
+    mostrarReprogramar: Boolean = false,
+    onReprogramar: () -> Unit = {}
 ) {
     val cita = detalle.cita
 
@@ -32,18 +34,30 @@ fun CitaCard(
             Text("Duración: ${detalle.servicio.duracionMin} min")
             Text("Precio: S/ ${"%.2f".format(cita.precio)}")
 
-            if (mostrarCancelar) {
-                OutlinedButton(
-                    onClick = onCancelar,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Cancelar cita")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (mostrarReprogramar) {
+                    Button(
+                        onClick = onReprogramar,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Reprogramar")
+                    }
+                }
+                if (mostrarCancelar) {
+                    OutlinedButton(
+                        onClick = onCancelar,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancelar cita")
+                    }
                 }
             }
         }
     }
 }
-
-

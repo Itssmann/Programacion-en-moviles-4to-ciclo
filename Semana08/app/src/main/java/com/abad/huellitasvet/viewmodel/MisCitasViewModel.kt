@@ -8,6 +8,7 @@ import com.abad.huellitasvet.data.repository.VetRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class MisCitasViewModel(
@@ -74,6 +75,8 @@ class MisCitasViewModel(
         return Duration.between(LocalDateTime.now(), inicio).toMinutes() > 120
     }
 
+    fun puedeReprogramar(cita: Cita): Boolean = puedeCancelar(cita)
+
     fun cancelar(cita: Cita) {
         viewModelScope.launch {
             actualizarHora()
@@ -95,6 +98,37 @@ class MisCitasViewModel(
                 _mensaje.value = "Cita cancelada correctamente"
             } catch (e: Exception) {
                 _mensaje.value = e.message ?: "No se pudo cancelar"
+            }
+        }
+    }
+
+    fun reprogramar(citaId: Int, nuevaFecha: LocalDate, nuevaHora: String) {
+        viewModelScope.launch {
+            actualizarHora()
+
+            try {
+                val actual = repository.observarCita(citaId).first()?.cita
+                if (actual == null || !puedeReprogramar(actual)) {
+                    _mensaje.value = "Ya no puedes reprogramar esta cita (menos de 2 horas o estado no válido)"
+                    return@launch
+                }
+
+                val fechaHoraNueva = LocalDateTime.of(nuevaFecha, java.time.LocalTime.parse(nuevaHora))
+                if (!fechaHoraNueva.isAfter(LocalDateTime.now())) {
+                    _mensaje.value = "La nueva fecha y hora deben ser futuras"
+                    return@launch
+                }
+
+                val ocupadas = repository.contarOcupadasExcluyendo(nuevaFecha.toString(), nuevaHora, citaId)
+                if (ocupadas > 0) {
+                    _mensaje.value = "El horario seleccionado ya está ocupado"
+                    return@launch
+                }
+
+                repository.reprogramarCita(citaId, nuevaFecha.toString(), nuevaHora)
+                _mensaje.value = "Cita reprogramada correctamente"
+            } catch (e: Exception) {
+                _mensaje.value = e.message ?: "No se pudo reprogramar la cita"
             }
         }
     }
