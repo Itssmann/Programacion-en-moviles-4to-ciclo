@@ -17,6 +17,9 @@ class VetViewModelFactory(
             modelClass.isAssignableFrom(SesionViewModel::class.java) ->
                 SesionViewModel(repository, preferencias) as T
 
+            modelClass.isAssignableFrom(RegistroViewModel::class.java) ->
+                RegistroViewModel(repository) as T
+
             modelClass.isAssignableFrom(InicioViewModel::class.java) ->
                 InicioViewModel(repository, duenoId) as T
 

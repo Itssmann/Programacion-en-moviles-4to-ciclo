@@ -105,7 +105,7 @@ fun SplashScreen(
                 Spacer(Modifier.height(64.dp))
 
                 Button(
-                    onClick = { onDestino(Rutas.LOGIN) },
+                    onClick = { onDestino(Rutas.REGISTRO) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),

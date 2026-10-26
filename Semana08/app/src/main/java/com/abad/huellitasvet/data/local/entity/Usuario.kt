@@ -1,9 +1,15 @@
 package com.abad.huellitasvet.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "usuarios")
+@Entity(
+    tableName = "usuarios",
+    indices = [
+        Index(value = ["correo"], unique = true)
+    ]
+)
 data class Usuario(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,

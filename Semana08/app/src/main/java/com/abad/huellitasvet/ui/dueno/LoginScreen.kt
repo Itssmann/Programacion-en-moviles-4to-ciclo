@@ -24,7 +24,8 @@ import com.abad.huellitasvet.viewmodel.SesionViewModel
 @Composable
 fun LoginScreen(
     viewModel: SesionViewModel,
-    onLoginExitoso: (String) -> Unit
+    onLoginExitoso: (String) -> Unit,
+    onRegistrar: () -> Unit = {}
 ) {
     var correo by remember { mutableStateOf("") }
     var clave by remember { mutableStateOf("") }
@@ -238,10 +239,7 @@ fun LoginScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     TextButton(
-                        onClick = {
-                            dialogMessage = "Funcionalidad no disponible en esta versión"
-                            showDialog = true
-                        }
+                        onClick = onRegistrar
                     ) {
                         Text(
                             "¿No tienes cuenta? Regístrate",

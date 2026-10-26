@@ -207,6 +207,30 @@ fun NavVet(
                         popUpTo(Rutas.LOGIN) { inclusive = true }
                         launchSingleTop = true
                     }
+                },
+                onRegistrar = {
+                    navController.navigate(Rutas.REGISTRO)
+                }
+            )
+        }
+
+        composable(Rutas.REGISTRO) {
+            val registroViewModel: RegistroViewModel = viewModel(
+                factory = VetViewModelFactory(repository, preferencias)
+            )
+            RegistroScreen(
+                viewModel = registroViewModel,
+                onRegistroExitoso = {
+                    navController.navigate(Rutas.LOGIN) {
+                        popUpTo(Rutas.REGISTRO) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onVolverLogin = {
+                    navController.navigate(Rutas.LOGIN) {
+                        popUpTo(Rutas.REGISTRO) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             )
         }

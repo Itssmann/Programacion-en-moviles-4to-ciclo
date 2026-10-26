@@ -16,8 +16,32 @@ class VetRepositoryRoom(
     private val servicios = db.servicioDao()
     private val citas = db.citaDao()
 
-    override suspend fun login(correo: String, clave: String): Usuario? =
-        usuarios.login(correo, clave)
+    override suspend fun login(correo: String, clave: String): Usuario? {
+        val usuario = usuarios.obtenerPorCorreo(correo.trim())
+        if (usuario != null && com.abad.huellitasvet.data.local.PasswordUtils.verifyPassword(clave, usuario.clave)) {
+            return usuario
+        }
+        return null
+    }
+
+    override suspend fun obtenerUsuarioPorCorreo(correo: String): Usuario? =
+        usuarios.obtenerPorCorreo(correo.trim())
+
+    override suspend fun registrarUsuario(nombre: String, correo: String, clave: String, rol: String): Long {
+        val correoTrim = correo.trim().lowercase()
+        val existente = usuarios.obtenerPorCorreo(correoTrim)
+        require(existente == null) { "El correo ya está registrado" }
+
+        val hashedPassword = com.abad.huellitasvet.data.local.PasswordUtils.hashPassword(clave)
+        return usuarios.insertar(
+            Usuario(
+                nombre = nombre.trim(),
+                correo = correoTrim,
+                clave = hashedPassword,
+                rol = rol
+            )
+        )
+    }
 
     override fun observarMascotas(duenoId: Int): Flow<List<MascotaConDueno>> =
         mascotas.observarPorDueno(duenoId)
