@@ -180,7 +180,9 @@ fun NavVet(
         }
     }
 
-    HuellitasVetTheme(isAdmin = isAdmin, darkTheme = modoOscuro) {
+    val activeRole = usuario?.rol ?: perfilActivo
+
+    HuellitasVetTheme(isAdmin = isAdmin, role = activeRole, darkTheme = modoOscuro) {
         NavHost(
             navController = navController,
             startDestination = Rutas.SPLASH
@@ -202,7 +204,11 @@ fun NavVet(
                 viewModel = sesionViewModel,
                 onLoginExitoso = { rol ->
                     navController.navigate(
-                        if (rol == "ADMIN") Rutas.PANEL else Rutas.INICIO
+                        when (rol) {
+                            "ADMIN" -> Rutas.ADMIN_DASHBOARD
+                            "VET" -> Rutas.PANEL
+                            else -> Rutas.INICIO
+                        }
                     ) {
                         popUpTo(Rutas.LOGIN) { inclusive = true }
                         launchSingleTop = true
@@ -236,12 +242,7 @@ fun NavVet(
         }
 
         composable(Rutas.INICIO) {
-            val nombreDinamico = when {
-                !usuario?.nombre.isNullOrBlank() -> usuario!!.nombre
-                duenoId == 1 -> "Ana Torres"
-                duenoId == 2 -> "Luis Pérez"
-                else -> "Ana Torres"
-            }
+            val nombreDinamico = usuario?.nombre?.ifBlank { null } ?: "Usuario"
 
             InicioScreen(
                 nombreDueno = nombreDinamico,
@@ -252,7 +253,7 @@ fun NavVet(
                 },
                 onPedirCita = { navController.navigate(Rutas.PEDIR_CITA) },
                 onMisCitas = { navController.navigate(Rutas.MIS_CITAS) },
-                onPerfil = { navController.navigate(Rutas.PERFIL) },
+                onNotificaciones = { navController.navigate(Rutas.NOTIFICACIONES) },
                 bottomBar = {
                     OwnerBottomBar(currentRoute = Rutas.INICIO, onNavigate = ownerNavegar)
                 }
@@ -341,6 +342,8 @@ fun NavVet(
             PerfilScreen(
                 nombre = usuario?.nombre ?: "Usuario",
                 correo = usuario?.correo ?: "",
+                telefono = usuario?.telefono,
+                distrito = usuario?.distrito,
                 cantidadMascotas = mascotas.size,
                 citasProximas = proximas.size,
                 atenciones = historial.count {
@@ -359,12 +362,46 @@ fun NavVet(
         }
 
 
+        composable(Rutas.NOTIFICACIONES) {
+            val notificacionesFactory = remember(repository, duenoId) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                        NotificacionesViewModel(repository, duenoId) as T
+                }
+            }
+            val notificacionesViewModel: NotificacionesViewModel = viewModel(
+                key = "notificaciones_$duenoId",
+                factory = notificacionesFactory
+            )
+            NotificacionesScreen(
+                viewModel = notificacionesViewModel,
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable(Rutas.ADMIN_DASHBOARD) {
+            val adminFactory = remember(repository) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                        AdminViewModel(repository) as T
+                }
+            }
+            val adminViewModel: AdminViewModel = viewModel(factory = adminFactory)
+            AdminDashboardScreen(
+                viewModel = adminViewModel,
+                onCerrarSesion = { cerrarSesion() }
+            )
+        }
+
         composable(Rutas.PANEL) {
             PanelScreen(
                 viewModel = panelViewModel,
                 onAgenda = {
                     navController.navigate(Rutas.AGENDA) { launchSingleTop = true }
                 },
+                onNotificaciones = { navController.navigate(Rutas.NOTIFICACIONES) },
                 bottomBar = {
                     AdminBottomBar(currentRoute = Rutas.PANEL) { ruta ->
                         navController.navigate(ruta) {

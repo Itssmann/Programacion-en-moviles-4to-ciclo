@@ -57,7 +57,7 @@ fun LoginScreen(
         )
     }
 
-    HuellitasVetTheme(isAdmin = rol == "ADMIN") {
+    HuellitasVetTheme(role = rol) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
@@ -73,26 +73,26 @@ fun LoginScreen(
                 Spacer(Modifier.height(32.dp))
 
                 Text(
-                    text = "Bienvenido",
+                    text = "Bienvenido a HuellitasVet",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
-                    text = "Ingresa para continuar",
+                    text = "Selecciona tu perfil e ingresa tus credenciales",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(Modifier.height(8.dp))
 
-                // Custom compact segmented control
+                // 3 options segmented control for Dueño, Veterinario, Administrador
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .height(52.dp),
+                    shape = RoundedCornerShape(26.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Row(
@@ -101,6 +101,7 @@ fun LoginScreen(
                             .padding(4.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        // Dueño
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
@@ -109,18 +110,42 @@ fun LoginScreen(
                                     rol = "CLIENTE"
                                     viewModel.limpiarError()
                                 },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(22.dp),
                             color = if (rol == "CLIENTE") MaterialTheme.colorScheme.primary else Color.Transparent
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     "Dueño",
                                     color = if (rol == "CLIENTE") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
 
+                        // Veterinario
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    rol = "VET"
+                                    viewModel.limpiarError()
+                                },
+                            shape = RoundedCornerShape(22.dp),
+                            color = if (rol == "VET") MaterialTheme.colorScheme.primary else Color.Transparent
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    "Veterinario",
+                                    color = if (rol == "VET") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+
+                        // Administrador
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
@@ -129,14 +154,15 @@ fun LoginScreen(
                                     rol = "ADMIN"
                                     viewModel.limpiarError()
                                 },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(22.dp),
                             color = if (rol == "ADMIN") MaterialTheme.colorScheme.primary else Color.Transparent
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    "Veterinario",
+                                    "Admin",
                                     color = if (rol == "ADMIN") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }

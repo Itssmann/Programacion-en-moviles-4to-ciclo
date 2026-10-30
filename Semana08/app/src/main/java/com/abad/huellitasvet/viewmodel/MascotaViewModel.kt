@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.abad.huellitasvet.data.local.entity.Mascota
 import com.abad.huellitasvet.data.local.relation.CitaConDetalle
 import com.abad.huellitasvet.data.repository.VetRepository
+import com.abad.huellitasvet.model.MascotaEdadUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -60,14 +61,15 @@ class MascotaViewModel(
         if (mascota.nombre.trim().length < 2) {
             erroresNuevos["nombre"] = "Mínimo 2 caracteres"
         }
-        if (mascota.especie !in listOf("PERRO", "GATO", "OTRO")) {
-            erroresNuevos["especie"] = "Selecciona una especie"
+        if (mascota.especie.isBlank()) {
+            erroresNuevos["especie"] = "Selecciona o ingresa una especie"
         }
         if (mascota.sexo !in listOf("MACHO", "HEMBRA")) {
             erroresNuevos["sexo"] = "Selecciona el sexo"
         }
-        if (mascota.anioNacimiento !in 1990..LocalDate.now().year) {
-            erroresNuevos["anio"] = "Año entre 1990 y ${LocalDate.now().year}"
+        val fechaNac = MascotaEdadUtils.parseFechaNacimiento(mascota.anioNacimiento)
+        if (fechaNac.isAfter(LocalDate.now())) {
+            erroresNuevos["anio"] = "La fecha de nacimiento no puede ser futura"
         }
         if (!mascota.peso.isFinite() || mascota.peso <= 0) {
             erroresNuevos["peso"] = "El peso debe ser mayor a cero"
@@ -121,4 +123,3 @@ class MascotaViewModel(
         }
     }
 }
-

@@ -46,8 +46,8 @@ class PedirCitaViewModel(
     private val _mascotaId = MutableStateFlow<Int?>(null)
     val mascotaId = _mascotaId.asStateFlow()
 
-    private val _servicioId = MutableStateFlow<Int?>(null)
-    val servicioId = _servicioId.asStateFlow()
+    private val _servicioIds = MutableStateFlow<Set<Int>>(emptySet())
+    val servicioIds = _servicioIds.asStateFlow()
 
     private val _fecha = MutableStateFlow(LocalDate.now())
     val fecha = _fecha.asStateFlow()
@@ -83,8 +83,14 @@ class PedirCitaViewModel(
         _error.value = null
     }
 
-    fun elegirServicio(id: Int) {
-        _servicioId.value = id
+    fun toggleServicio(id: Int) {
+        val actual = _servicioIds.value.toMutableSet()
+        if (actual.contains(id)) {
+            actual.remove(id)
+        } else {
+            actual.add(id)
+        }
+        _servicioIds.value = actual
         _error.value = null
     }
 
@@ -127,11 +133,11 @@ class PedirCitaViewModel(
         if (_guardando.value) return
 
         val idMascota = _mascotaId.value
-        val idServicio = _servicioId.value
+        val idsServicios = _servicioIds.value
         val horaElegida = _hora.value
 
-        if (idMascota == null || idServicio == null || horaElegida == null) {
-            _error.value = "Selecciona mascota, servicio, fecha y hora"
+        if (idMascota == null || idsServicios.isEmpty() || horaElegida == null) {
+            _error.value = "Selecciona mascota, al menos un servicio, fecha y hora"
             return
         }
 
@@ -162,9 +168,11 @@ class PedirCitaViewModel(
                     "Selecciona una mascota de tu cuenta"
                 }
 
-                val servicio = repository.obtenerServicio(idServicio)
-                require(servicio?.activo == true) {
-                    "El servicio no está disponible"
+                for (sId in idsServicios) {
+                    val servicio = repository.obtenerServicio(sId)
+                    require(servicio?.activo == true) {
+                        "Uno de los servicios seleccionados no está disponible"
+                    }
                 }
 
                 require(
@@ -178,7 +186,7 @@ class PedirCitaViewModel(
 
                 repository.crearCita(
                     mascotaId = idMascota,
-                    servicioId = idServicio,
+                    servicioIds = idsServicios.toList(),
                     fecha = dia.toString(),
                     hora = horaElegida,
                     nota = _nota.value.trim()
@@ -193,4 +201,3 @@ class PedirCitaViewModel(
         }
     }
 }
-

@@ -20,11 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.abad.huellitasvet.ui.components.MascotaAvatar
 import com.abad.huellitasvet.viewmodel.PedirCitaViewModel
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -47,17 +48,47 @@ fun PedirCitaScreen(
     val mascotas by viewModel.mascotas.collectAsState()
     val servicios by viewModel.servicios.collectAsState()
     val mascotaId by viewModel.mascotaId.collectAsState()
-    val servicioId by viewModel.servicioId.collectAsState()
+    val servicioIds by viewModel.servicioIds.collectAsState()
     val fecha by viewModel.fecha.collectAsState()
     val hora by viewModel.hora.collectAsState()
-    val ocupadas by viewModel.horasOcupadas.collectAsState()
     val error by viewModel.error.collectAsState()
     val confirmada by viewModel.confirmada.collectAsState()
     val guardando by viewModel.guardando.collectAsState()
     val aceptarCitas by viewModel.aceptarCitas.collectAsState()
 
-    val servicioElegido = servicios.find { it.id == servicioId }
-    val mascotaElegida = mascotas.find { it.id == mascotaId }
+    val serviciosElegidos = servicios.filter { it.id in servicioIds }
+    val precioTotal = serviciosElegidos.sumOf { it.precio }
+
+    var showDatePickerCita by remember { mutableStateOf(false) }
+    val datePickerCitaState = rememberDatePickerState(
+        initialSelectedDateMillis = fecha.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    )
+
+    if (showDatePickerCita) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerCita = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerCitaState.selectedDateMillis?.let { millis ->
+                        val selected = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                        if (!selected.isBefore(LocalDate.now())) {
+                            viewModel.elegirFecha(selected)
+                        }
+                    }
+                    showDatePickerCita = false
+                }) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePickerCita = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerCitaState)
+        }
+    }
 
     LaunchedEffect(confirmada) {
         if (confirmada) onConfirmada()
@@ -118,8 +149,8 @@ fun PedirCitaScreen(
                         Surface(
                             onClick = { viewModel.elegirMascota(mascota.id) },
                             shape = RoundedCornerShape(24.dp),
-                            color = if (seleccionado) Color(0xFFD1FAE5) else MaterialTheme.colorScheme.surface,
-                            border = if (seleccionado) BorderStroke(1.5.dp, Color(0xFF059669)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            color = if (seleccionado) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, if (seleccionado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -131,7 +162,7 @@ fun PedirCitaScreen(
                                     text = mascota.nombre,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (seleccionado) Color(0xFF065F46) else MaterialTheme.colorScheme.onSurface
+                                    color = if (seleccionado) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -139,9 +170,9 @@ fun PedirCitaScreen(
                 }
             }
 
-            // 2. Servicio
+            // 2. Servicios
             Text(
-                "Servicio",
+                "Servicios (selecciona uno o más)",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -151,12 +182,12 @@ fun PedirCitaScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 servicios.forEach { servicio ->
-                    val seleccionado = servicioId == servicio.id
+                    val seleccionado = servicio.id in servicioIds
                     Surface(
-                        onClick = { viewModel.elegirServicio(servicio.id) },
+                        onClick = { viewModel.toggleServicio(servicio.id) },
                         shape = RoundedCornerShape(16.dp),
-                        color = if (seleccionado) Color(0xFFD1FAE5) else MaterialTheme.colorScheme.surface,
-                        border = if (seleccionado) BorderStroke(1.5.dp, Color(0xFF059669)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        color = if (seleccionado) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, if (seleccionado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -166,16 +197,21 @@ fun PedirCitaScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            Checkbox(
+                                checked = seleccionado,
+                                onCheckedChange = { viewModel.toggleServicio(servicio.id) }
+                            )
+
                             Surface(
                                 modifier = Modifier.size(40.dp),
                                 shape = RoundedCornerShape(10.dp),
-                                color = Color(0xFFDBEAFE)
+                                color = MaterialTheme.colorScheme.secondaryContainer
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = getServiceIcon(servicio.icono),
                                         contentDescription = null,
-                                        tint = Color(0xFF1D4ED8),
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -189,166 +225,116 @@ fun PedirCitaScreen(
                                     text = servicio.nombre,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (seleccionado) Color(0xFF065F46) else MaterialTheme.colorScheme.onSurface
+                                    color = if (seleccionado) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "${servicio.duracionMin} min",
+                                    text = "${servicio.duracionMin} min · ${servicio.descripcion}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
                             Text(
-                                text = "S/ ${"%.0f".format(servicio.precio)}",
+                                text = "S/ ${"%.2f".format(servicio.precio)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = if (seleccionado) Color(0xFF065F46) else MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
                 }
             }
 
-            // 3. Fecha
+            if (serviciosElegidos.isNotEmpty()) {
+                ElevatedCard(
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Resumen de servicios:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        serviciosElegidos.forEach { s ->
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("• ${s.nombre}", style = MaterialTheme.typography.bodySmall)
+                                Text("S/ ${"%.2f".format(s.precio)}", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Total estimado:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text("S/ ${"%.2f".format(precioTotal)}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+
+            // 3. Fecha interactiva (DatePicker M3)
             Text(
-                "Fecha",
+                "Fecha de la cita",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
-            val dias = remember {
-                (0L..6L).map { LocalDate.now().plusDays(it) }
-            }
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            OutlinedCard(
+                onClick = { showDatePickerCita = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                items(dias) { dia ->
-                    val seleccionado = fecha == dia
-                    val diaSemana = dia.format(DateTimeFormatter.ofPattern("EEE", Locale.forLanguageTag("es")))
-                    val numeroDia = dia.format(DateTimeFormatter.ofPattern("dd"))
-
-                    Surface(
-                        onClick = { viewModel.elegirFecha(dia) },
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (seleccionado) Color(0xFF059669) else MaterialTheme.colorScheme.surface,
-                        border = if (!seleccionado) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
-                        modifier = Modifier.width(60.dp).height(64.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = diaSemana.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.forLanguageTag("es")) else it.toString() },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (seleccionado) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = numeroDia,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = if (seleccionado) Color.White else MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("Fecha seleccionada", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = fecha.format(DateTimeFormatter.ofPattern("EEEE dd 'de' MMMM 'de' yyyy", Locale.forLanguageTag("es"))),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
             // 4. Hora
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Hora",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Ocupado = gris",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                "Hora disponible",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                viewModel.horarios.forEach { opcion ->
-                    val ocupada = opcion in ocupadas
-                    val pasada = !viewModel.horaDisponible(opcion) && !ocupada
-                    val deshabilitado = ocupada || pasada
-                    val seleccionado = hora == opcion
+                viewModel.horarios.forEach { h ->
+                    val disponible = viewModel.horaDisponible(h)
+                    val seleccionado = hora == h
 
-                    Surface(
-                        onClick = { if (!deshabilitado) viewModel.elegirHora(opcion) },
-                        enabled = !deshabilitado,
-                        modifier = Modifier
-                            .width(76.dp)
-                            .height(42.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        color = when {
-                            seleccionado -> Color(0xFF059669)
-                            deshabilitado -> Color(0xFFF1F5F9)
-                            else -> MaterialTheme.colorScheme.surface
-                        },
-                        border = if (!seleccionado && !deshabilitado) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = opcion,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = when {
-                                    seleccionado -> Color.White
-                                    deshabilitado -> Color.Gray
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                },
-                                textDecoration = if (deshabilitado) TextDecoration.LineThrough else null
-                            )
-                        }
-                    }
+                    FilterChip(
+                        selected = seleccionado,
+                        onClick = { if (disponible) viewModel.elegirHora(h) },
+                        enabled = disponible,
+                        label = { Text(h) }
+                    )
                 }
             }
 
-            // Resumen card (very light green)
-            if (mascotaElegida != null || servicioElegido != null || hora != null) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFFD1FAE5)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = "${mascotaElegida?.nombre ?: "Mascota"} · ${servicioElegido?.nombre ?: "Servicio"}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF065F46)
-                        )
-                        val formatoFecha = fecha.format(DateTimeFormatter.ofPattern("EEE dd MMM", Locale.forLanguageTag("es")))
-                        val textoFecha = formatoFecha.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.forLanguageTag("es")) else it.toString() }
-                        Text(
-                            text = "$textoFecha · ${hora ?: "--:--"} · S/ ${"%.2f".format(servicioElegido?.precio ?: 0.0)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF047857),
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
+            // 5. Nota adicional
+            OutlinedTextField(
+                value = viewModel.nota.collectAsState().value,
+                onValueChange = viewModel::escribirNota,
+                label = { Text("Nota adicional o síntomas (opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                maxLines = 3
+            )
 
-            error?.let {
+            if (error != null) {
                 Text(
-                    it,
+                    error!!,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -372,7 +358,7 @@ fun PedirCitaScreen(
             Button(
                 onClick = viewModel::confirmar,
                 enabled = mascotaId != null &&
-                        servicioId != null &&
+                        servicioIds.isNotEmpty() &&
                         hora != null &&
                         !guardando &&
                         aceptarCitas,
@@ -381,8 +367,8 @@ fun PedirCitaScreen(
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF059669),
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(

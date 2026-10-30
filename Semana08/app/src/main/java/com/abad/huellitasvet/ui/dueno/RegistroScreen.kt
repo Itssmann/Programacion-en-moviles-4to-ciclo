@@ -10,6 +10,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -34,6 +36,9 @@ fun RegistroScreen(
 ) {
     val nombre by viewModel.nombre.collectAsState()
     val correo by viewModel.correo.collectAsState()
+    val telefono by viewModel.telefono.collectAsState()
+    val distrito by viewModel.distrito.collectAsState()
+    val distritoPersonalizado by viewModel.distritoPersonalizado.collectAsState()
     val clave by viewModel.clave.collectAsState()
     val confirmarClave by viewModel.confirmarClave.collectAsState()
     val rol by viewModel.rol.collectAsState()
@@ -45,6 +50,18 @@ fun RegistroScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var expandedDistrito by remember { mutableStateOf(false) }
+
+    val distritosLima = listOf(
+        "Miraflores", "San Isidro", "Santiago de Surco", "San Borja",
+        "La Molina", "Lince", "Jesús María", "Magdalena",
+        "Pueblo Libre", "San Miguel", "Lima Cercado", "Los Olivos",
+        "San Martín de Porres", "Comas", "Independencia",
+        "San Juan de Lurigancho", "Villa El Salvador", "Villa María del Triunfo",
+        "San Juan de Miraflores", "Chorrillos", "El Agustino", "Santa Anita",
+        "Ate", "La Victoria", "Rímac", "Breña", "Barranco",
+        "San Luis", "Surquillo", "Otros"
+    )
 
     LaunchedEffect(registroExitoso) {
         if (registroExitoso) {
@@ -68,7 +85,7 @@ fun RegistroScreen(
         )
     }
 
-    HuellitasVetTheme(isAdmin = rol == "ADMIN") {
+    HuellitasVetTheme(role = rol) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
@@ -98,7 +115,7 @@ fun RegistroScreen(
 
                 Spacer(Modifier.height(4.dp))
 
-                // Role selector
+                // Role selector (CLIENTE vs VET)
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -123,25 +140,24 @@ fun RegistroScreen(
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     "Dueño",
-                                    color = if (rol == "CLIENTE") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (rol == "CLIENTE") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .clickable { viewModel.onRolChange("ADMIN") },
+                                .clickable { viewModel.onRolChange("VET") },
                             shape = RoundedCornerShape(20.dp),
-                            color = if (rol == "ADMIN") MaterialTheme.colorScheme.primary else Color.Transparent
+                            color = if (rol == "VET") MaterialTheme.colorScheme.primary else Color.Transparent
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     "Veterinario",
-                                    color = if (rol == "ADMIN") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (rol == "VET") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -153,134 +169,171 @@ fun RegistroScreen(
                     value = nombre,
                     onValueChange = viewModel::onNombreChange,
                     label = { Text("Nombre completo") },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    isError = errores.containsKey("nombre"),
-                    supportingText = { errores["nombre"]?.let { Text(it) } },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    isError = errores["nombre"] != null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
+                if (errores["nombre"] != null) {
+                    Text(errores["nombre"]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
 
-                // Correo electrónico
+                // Correo
                 OutlinedTextField(
                     value = correo,
                     onValueChange = viewModel::onCorreoChange,
                     label = { Text("Correo electrónico") },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    isError = errores.containsKey("correo"),
-                    supportingText = { errores["correo"]?.let { Text(it) } },
+                    isError = errores["correo"] != null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
+                if (errores["correo"] != null) {
+                    Text(errores["correo"]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+
+                // Teléfono móvil (9 dígitos, empieza con 9)
+                OutlinedTextField(
+                    value = telefono,
+                    onValueChange = viewModel::onTelefonoChange,
+                    label = { Text("Teléfono móvil (9 dígitos)") },
+                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    isError = errores["telefono"] != null,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                if (errores["telefono"] != null) {
+                    Text(errores["telefono"]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+
+                // Distrito selector
+                ExposedDropdownMenuBox(
+                    expanded = expandedDistrito,
+                    onExpandedChange = { expandedDistrito = !expandedDistrito },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = distrito,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Distrito de Lima") },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDistrito) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedDistrito,
+                        onDismissRequest = { expandedDistrito = false }
+                    ) {
+                        distritosLima.forEach { opcion ->
+                            DropdownMenuItem(
+                                text = { Text(opcion) },
+                                onClick = {
+                                    viewModel.onDistritoChange(opcion)
+                                    expandedDistrito = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (distrito == "Otros") {
+                    OutlinedTextField(
+                        value = distritoPersonalizado,
+                        onValueChange = viewModel::onDistritoPersonalizadoChange,
+                        label = { Text("Especificar otro distrito") },
+                        isError = errores["distrito"] != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+                if (errores["distrito"] != null) {
+                    Text(errores["distrito"]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
 
                 // Contraseña
                 OutlinedTextField(
                     value = clave,
                     onValueChange = viewModel::onClaveChange,
                     label = { Text("Contraseña") },
-                    singleLine = true,
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                                if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null
                             )
                         }
                     },
-                    isError = errores.containsKey("clave"),
-                    supportingText = { errores["clave"]?.let { Text(it) } },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    isError = errores["clave"] != null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
+                if (errores["clave"] != null) {
+                    Text(errores["clave"]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
 
-                // Confirmar contraseña
+                // Confirmar Contraseña
                 OutlinedTextField(
                     value = confirmarClave,
                     onValueChange = viewModel::onConfirmarClaveChange,
                     label = { Text("Confirmar contraseña") },
-                    singleLine = true,
-                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
-                                imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (confirmPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                                if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null
                             )
                         }
                     },
-                    isError = errores.containsKey("confirmarClave"),
-                    supportingText = { errores["confirmarClave"]?.let { Text(it) } },
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    isError = errores["confirmarClave"] != null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
+                if (errores["confirmarClave"] != null) {
+                    Text(errores["confirmarClave"]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
 
                 Spacer(Modifier.height(8.dp))
 
                 Button(
-                    onClick = viewModel::registrar,
-                    enabled = !cargando,
+                    onClick = { viewModel.registrar() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(50.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    enabled = !cargando
                 ) {
                     if (cargando) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
-                        Text("Crear cuenta", fontWeight = FontWeight.SemiBold)
+                        Text("Registrarse", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
                 }
 
-                Box(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text("¿Ya tienes cuenta?")
                     TextButton(onClick = onVolverLogin) {
-                        Text(
-                            "¿Ya tengo cuenta? Iniciar sesión",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Text("Inicia sesión", fontWeight = FontWeight.Bold)
                     }
                 }
+
+                Spacer(Modifier.height(16.dp))
             }
         }
     }

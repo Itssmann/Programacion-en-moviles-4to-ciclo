@@ -11,9 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.abad.huellitasvet.model.MascotaEdadUtils
 import com.abad.huellitasvet.ui.components.MascotaAvatar
 import com.abad.huellitasvet.viewmodel.InicioViewModel
-import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,7 +25,6 @@ fun MascotasScreen(
     bottomBar: @Composable () -> Unit = {}
 ) {
     val mascotas by viewModel.mascotas.collectAsState()
-    val anioActual = LocalDate.now().year
 
     Scaffold(
         topBar = {
@@ -118,7 +117,7 @@ fun MascotasScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "${anioActual - mascota.anioNacimiento} años",
+                                    text = MascotaEdadUtils.calcularEdadTexto(mascota.anioNacimiento),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

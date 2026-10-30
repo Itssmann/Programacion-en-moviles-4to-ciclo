@@ -111,6 +111,10 @@ interface CitaDao {
     """)
     fun observarPesosHistorial(mascotaId: Int): Flow<List<CitaConDetalle>>
 
+    @Transaction
+    @Query("SELECT * FROM citas ORDER BY fecha DESC, hora DESC")
+    fun observarTodas(): Flow<List<CitaConDetalle>>
+
     @Query("""
         SELECT COALESCE(SUM(precio), 0.0) FROM citas
         WHERE estado = 'ATENDIDA' AND fecha >= :fechaInicio

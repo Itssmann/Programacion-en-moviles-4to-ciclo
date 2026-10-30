@@ -27,9 +27,10 @@ fun SplashScreen(
     LaunchedEffect(perfilActivo, usuarioId) {
         if (perfilActivo != null && usuarioId != null) {
             val destino = when {
-                usuarioId!! <= 0 -> null // Muestra la pantalla interactiva de bienvenida
+                usuarioId!! <= 0 -> null
                 perfilActivo == "CLIENTE" -> Rutas.INICIO
-                perfilActivo == "ADMIN" -> Rutas.PANEL
+                perfilActivo == "VET" -> Rutas.PANEL
+                perfilActivo == "ADMIN" -> Rutas.ADMIN_DASHBOARD
                 else -> null
             }
             if (destino != null) {
@@ -41,7 +42,7 @@ fun SplashScreen(
     if (perfilActivo == null || usuarioId == null || usuarioId!! <= 0) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color(0xFFF6FDF9)
+            color = Color(0xFFF4FBFB)
         ) {
             Column(
                 modifier = Modifier
@@ -53,7 +54,7 @@ fun SplashScreen(
                 Surface(
                     modifier = Modifier.size(96.dp),
                     shape = RoundedCornerShape(24.dp),
-                    color = Color(0xFF059669)
+                    color = Color(0xFF087F8C)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -71,7 +72,7 @@ fun SplashScreen(
                     text = "HuellitasVet",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF059669)
+                    color = Color(0xFF087F8C)
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -93,7 +94,7 @@ fun SplashScreen(
                         Surface(
                             modifier = Modifier.size(56.dp),
                             shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFFD1FAE5)
+                            color = Color(0xFFDDF5F0)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(emoji, fontSize = 24.sp)
@@ -111,7 +112,7 @@ fun SplashScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF059669)
+                        containerColor = Color(0xFF087F8C)
                     )
                 ) {
                     Text(
@@ -129,7 +130,7 @@ fun SplashScreen(
                 ) {
                     Text(
                         "Ya tengo una cuenta",
-                        color = Color(0xFF059669),
+                        color = Color(0xFF087F8C),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -140,7 +141,7 @@ fun SplashScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color(0xFF059669))
+            CircularProgressIndicator(color = Color(0xFF087F8C))
         }
     }
 }

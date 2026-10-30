@@ -16,6 +16,15 @@ class RegistroViewModel(
     private val _correo = MutableStateFlow("")
     val correo = _correo.asStateFlow()
 
+    private val _telefono = MutableStateFlow("")
+    val telefono = _telefono.asStateFlow()
+
+    private val _distrito = MutableStateFlow("Miraflores")
+    val distrito = _distrito.asStateFlow()
+
+    private val _distritoPersonalizado = MutableStateFlow("")
+    val distritoPersonalizado = _distritoPersonalizado.asStateFlow()
+
     private val _clave = MutableStateFlow("")
     val clave = _clave.asStateFlow()
 
@@ -39,9 +48,16 @@ class RegistroViewModel(
 
     fun onNombreChange(v: String) { _nombre.value = v }
     fun onCorreoChange(v: String) { _correo.value = v }
+    fun onTelefonoChange(v: String) { _telefono.value = v }
+    fun onDistritoChange(v: String) { _distrito.value = v }
+    fun onDistritoPersonalizadoChange(v: String) { _distritoPersonalizado.value = v }
     fun onClaveChange(v: String) { _clave.value = v }
     fun onConfirmarClaveChange(v: String) { _confirmarClave.value = v }
-    fun onRolChange(v: String) { _rol.value = v }
+    fun onRolChange(v: String) {
+        if (v == "CLIENTE" || v == "VET") {
+            _rol.value = v
+        }
+    }
 
     fun registrar() {
         val errs = mutableMapOf<String, String>()
@@ -57,6 +73,21 @@ class RegistroViewModel(
             errs["correo"] = "Ingresa un correo electrónico válido"
         }
 
+        val telefonoTrim = _telefono.value.trim()
+        val phoneRegex = Regex("^9\\d{8}$")
+        if (!phoneRegex.matches(telefonoTrim)) {
+            errs["telefono"] = "El teléfono debe tener 9 dígitos y empezar con 9"
+        }
+
+        val distritoFinal = if (_distrito.value == "Otros") {
+            _distritoPersonalizado.value.trim()
+        } else {
+            _distrito.value
+        }
+        if (distritoFinal.isBlank()) {
+            errs["distrito"] = "Selecciona o ingresa un distrito"
+        }
+
         val password = _clave.value
         val hasLetter = password.any { it.isLetter() }
         val hasDigit = password.any { it.isDigit() }
@@ -68,7 +99,7 @@ class RegistroViewModel(
             errs["confirmarClave"] = "Las contraseñas no coinciden"
         }
 
-        if (_rol.value !in listOf("CLIENTE", "ADMIN")) {
+        if (_rol.value !in listOf("CLIENTE", "VET")) {
             errs["rol"] = "Selecciona un rol válido"
         }
 
@@ -89,7 +120,9 @@ class RegistroViewModel(
                     nombre = nombreTrim,
                     correo = correoTrim,
                     clave = password,
-                    rol = _rol.value
+                    rol = _rol.value,
+                    telefono = telefonoTrim,
+                    distrito = distritoFinal
                 )
 
                 _mensajeExito.value = "¡Registro exitoso! Ya puedes iniciar sesión."

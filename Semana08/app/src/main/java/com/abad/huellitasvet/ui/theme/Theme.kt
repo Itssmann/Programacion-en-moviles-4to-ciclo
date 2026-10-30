@@ -12,40 +12,60 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val ClientLightColorScheme = lightColorScheme(
-    primary = GreenPrimary,
-    onPrimary = GreenOnPrimary,
-    primaryContainer = GreenPrimaryContainer,
-    onPrimaryContainer = GreenOnPrimaryContainer,
-    background = GreenBackground,
-    surface = GreenSurface,
+    primary = ClientPrimary,
+    onPrimary = ClientOnPrimary,
+    primaryContainer = ClientPrimaryContainer,
+    onPrimaryContainer = ClientOnPrimaryContainer,
+    background = ClientBackground,
+    surface = ClientSurface,
+    onSurface = NeutralDark
+)
+
+private val VetLightColorScheme = lightColorScheme(
+    primary = VetPrimary,
+    onPrimary = VetOnPrimary,
+    primaryContainer = VetPrimaryContainer,
+    onPrimaryContainer = VetOnPrimaryContainer,
+    background = VetBackground,
+    surface = VetSurface,
     onSurface = NeutralDark
 )
 
 private val AdminLightColorScheme = lightColorScheme(
-    primary = BluePrimary,
-    onPrimary = BlueOnPrimary,
-    primaryContainer = BluePrimaryContainer,
-    onPrimaryContainer = BlueOnPrimaryContainer,
-    background = BlueBackground,
-    surface = BlueSurface,
+    primary = AdminPrimary,
+    onPrimary = AdminOnPrimary,
+    primaryContainer = AdminPrimaryContainer,
+    onPrimaryContainer = AdminOnPrimaryContainer,
+    background = AdminBackground,
+    surface = AdminSurface,
     onSurface = NeutralDark
 )
 
 private val ClientDarkColorScheme = darkColorScheme(
-    primary = GreenPrimary,
-    onPrimary = GreenOnPrimary,
-    primaryContainer = Color(0xFF065F46),
-    onPrimaryContainer = Color(0xFFD1FAE5),
+    primary = ClientPrimary,
+    onPrimary = ClientOnPrimary,
+    primaryContainer = Color(0xFF7C2D12),
+    onPrimaryContainer = Color(0xFFFFEDD5),
+    background = Color(0xFF121212),
+    surface = Color(0xFF1E1E1E),
+    onSurface = Color(0xFFE0E0E0)
+)
+
+private val VetDarkColorScheme = darkColorScheme(
+    primary = VetPrimary,
+    onPrimary = VetOnPrimary,
+    primaryContainer = Color(0xFF713F12),
+    onPrimaryContainer = Color(0xFFFEF3C7),
     background = Color(0xFF121212),
     surface = Color(0xFF1E1E1E),
     onSurface = Color(0xFFE0E0E0)
 )
 
 private val AdminDarkColorScheme = darkColorScheme(
-    primary = BluePrimary,
-    onPrimary = BlueOnPrimary,
-    primaryContainer = Color(0xFF1E40AF),
-    onPrimaryContainer = Color(0xFFDBEAFE),
+    primary = AdminPrimary,
+    onPrimary = AdminOnPrimary,
+    primaryContainer = Color(0xFF4C1D95),
+    onPrimaryContainer = Color(0xFFEDE9FE),
     background = Color(0xFF121212),
     surface = Color(0xFF1E1E1E),
     onSurface = Color(0xFFE0E0E0)
@@ -54,6 +74,7 @@ private val AdminDarkColorScheme = darkColorScheme(
 @Composable
 fun HuellitasVetTheme(
     isAdmin: Boolean = false,
+    role: String = "CLIENTE",
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
@@ -63,10 +84,20 @@ fun HuellitasVetTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme && isAdmin -> AdminDarkColorScheme
-        darkTheme -> ClientDarkColorScheme
-        isAdmin -> AdminLightColorScheme
-        else -> ClientLightColorScheme
+        darkTheme -> {
+            when {
+                role == "ADMIN" || isAdmin -> AdminDarkColorScheme
+                role == "VET" -> VetDarkColorScheme
+                else -> ClientDarkColorScheme
+            }
+        }
+        else -> {
+            when {
+                role == "ADMIN" || isAdmin -> AdminLightColorScheme
+                role == "VET" -> VetLightColorScheme
+                else -> ClientLightColorScheme
+            }
+        }
     }
 
     MaterialTheme(

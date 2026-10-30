@@ -54,7 +54,7 @@ class PreferenciasStore(private val context: Context) {
     }
 
     suspend fun guardarSesion(rol: String, usuarioId: Int) {
-        require(rol == "CLIENTE" || rol == "ADMIN") {
+        require(rol == "CLIENTE" || rol == "VET" || rol == "ADMIN") {
             "Rol no válido"
         }
         require(usuarioId > 0) {

@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import java.util.Locale
 fun PanelScreen(
     viewModel: PanelViewModel,
     onAgenda: () -> Unit,
+    onNotificaciones: () -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
     val citasHoy by viewModel.citasHoy.collectAsState()
@@ -62,8 +65,12 @@ fun PanelScreen(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    IconButton(onClick = {}) {
-                        Text("🔔", style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = onNotificaciones) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notificaciones",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
