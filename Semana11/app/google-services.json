@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "561064527213",
+    "project_id": "miscursosabad",
+    "storage_bucket": "miscursosabad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:561064527213:android:45250fa9d2b897367fc664",
+        "android_client_info": {
+          "package_name": "com.abad.miscursos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYhQaJRRNys8_srvUZd14KwGuLjyGtbUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
