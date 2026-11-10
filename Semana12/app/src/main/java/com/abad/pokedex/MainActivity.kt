@@ -18,7 +18,7 @@ import com.abad.pokedex.ui.theme.PokedexAbadTheme
 class MainActivity : ComponentActivity() {
 
     private val container by lazy {
-        AppContainer()
+        AppContainer(applicationContext)
     }
 
     private val pokemonViewModel: PokemonViewModel by viewModels {

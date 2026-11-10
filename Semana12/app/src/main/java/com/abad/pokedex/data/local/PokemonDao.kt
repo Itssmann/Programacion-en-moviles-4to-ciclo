@@ -17,9 +17,7 @@ interface PokemonDao {
     )
     fun observarFavoritos(): Flow<List<PokemonEntity>>
 
-    @Query(
-        "SELECT * FROM pokemones WHERE nombre = :nombre LIMIT 1"
-    )
+    @Query("SELECT * FROM pokemones WHERE nombre = :nombre LIMIT 1")
     suspend fun obtenerPorNombre(
         nombre: String
     ): PokemonEntity?
@@ -40,9 +38,7 @@ interface PokemonDao {
     @Query("SELECT COUNT(*) FROM pokemones")
     suspend fun contarTodos(): Int
 
-    @Query(
-        "SELECT COUNT(*) FROM pokemones WHERE esFavorito = 1"
-    )
+    @Query("SELECT COUNT(*) FROM pokemones WHERE esFavorito = 1")
     suspend fun contarFavoritos(): Int
 
     @Query("DELETE FROM pokemones")
