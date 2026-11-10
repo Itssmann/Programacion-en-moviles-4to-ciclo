@@ -1,6 +1,6 @@
-package com.abad.pokedex.repository
+package com.abad.pokedex.data.repository
 
-import com.abad.pokedex.model.Pokemon
+import com.abad.pokedex.domain.model.Pokemon
 import kotlinx.coroutines.flow.Flow
 
 interface PokemonRepository {
