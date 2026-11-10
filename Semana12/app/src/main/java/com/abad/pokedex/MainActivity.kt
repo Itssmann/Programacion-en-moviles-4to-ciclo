@@ -3,50 +3,43 @@ package com.abad.pokedex
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.abad.pokedex.ui.lista.PokemonListScreen
+import com.abad.pokedex.ui.lista.PokemonViewModel
+import com.abad.pokedex.ui.lista.PokemonViewModelFactory
 import com.abad.pokedex.ui.theme.PokedexAbadTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val container by lazy {
+        AppContainer()
+    }
+
+    private val pokemonViewModel: PokemonViewModel by viewModels {
+        PokemonViewModelFactory(container.pokemonRepository)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         setContent {
             PokedexAbadTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
-
-                    PokemonListScreenContainer(
+                    androidx.compose.foundation.layout.Box(
                         modifier = Modifier.padding(innerPadding)
-                    )
+                    ) {
+                        PokemonListScreen(
+                            viewModel = pokemonViewModel
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun PokemonListScreenContainer(
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.foundation.layout.Box(
-        modifier = modifier.fillMaxSize()
-    ) {
-        PokemonListScreen()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PokedexPreview() {
-    PokedexAbadTheme {
-        PokemonListScreen()
     }
 }
