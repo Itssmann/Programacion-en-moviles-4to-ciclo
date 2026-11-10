@@ -54,8 +54,14 @@ class PokemonRepositoryImpl(
         Pokemon(
             nombre = detalle.name,
             imagenUrl = detalle.sprites.frontDefault,
-            tipos = detalle.types.map {
-                it.type.name
+            tipos = detalle.types.map { it.type.name },
+            altura = detalle.height,
+            peso = detalle.weight,
+            habilidades = detalle.abilities.map {
+                it.ability.name
+            },
+            estadisticas = detalle.stats.associate {
+                it.stat.name to it.baseStat
             }
         )
     }
