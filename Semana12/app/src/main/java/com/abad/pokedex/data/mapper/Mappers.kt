@@ -5,7 +5,9 @@ import com.abad.pokedex.domain.model.Pokemon
 import org.json.JSONArray
 import org.json.JSONObject
 
-fun PokemonEntity.toDomain(): Pokemon {
+fun PokemonEntity.toDomain(
+    favoritoUsuario: Boolean = esFavorito
+): Pokemon {
     val listaTipos = JSONArray(tipos)
     val listaHabilidades = JSONArray(habilidades)
     val objetoEstadisticas = JSONObject(estadisticas)
@@ -16,13 +18,14 @@ fun PokemonEntity.toDomain(): Pokemon {
         tipos = (0 until listaTipos.length()).map {
             listaTipos.getString(it)
         },
-        esFavorito = esFavorito,
+        esFavorito = favoritoUsuario,
         altura = altura,
         peso = peso,
         habilidades = (0 until listaHabilidades.length()).map {
             listaHabilidades.getString(it)
         },
-        estadisticas = objetoEstadisticas.keys().asSequence()
+        estadisticas = objetoEstadisticas.keys()
+            .asSequence()
             .associateWith {
                 objetoEstadisticas.getInt(it)
             }

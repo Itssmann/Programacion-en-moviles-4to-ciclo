@@ -4,11 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
+import com.abad.pokedex.data.auth.FirebaseAuthRepository
+import com.abad.pokedex.ui.login.LoginViewModel
+import com.abad.pokedex.ui.login.LoginViewModelFactory
 import com.abad.pokedex.ui.detalle.DetalleViewModel
 import com.abad.pokedex.ui.detalle.DetalleViewModelFactory
 import com.abad.pokedex.ui.favoritos.FavoritosViewModel
@@ -25,36 +23,33 @@ class MainActivity : ComponentActivity() {
     }
 
     private val pokemonViewModel: PokemonViewModel by viewModels {
-        PokemonViewModelFactory(
-            container.pokemonRepository
-        )
+        PokemonViewModelFactory(container.pokemonRepository)
     }
 
     private val detalleViewModel: DetalleViewModel by viewModels {
-        DetalleViewModelFactory(
-            container.pokemonRepository
-        )
+        DetalleViewModelFactory(container.pokemonRepository)
     }
 
     private val favoritosViewModel: FavoritosViewModel by viewModels {
-        FavoritosViewModelFactory(
-            container.pokemonRepository
-        )
+        FavoritosViewModelFactory(container.pokemonRepository)
+    }
+
+    private val loginViewModel: LoginViewModel by viewModels {
+        LoginViewModelFactory(FirebaseAuthRepository())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         setContent {
             PokedexAbadTheme {
                 AppNavigation(
                     pokemonViewModel = pokemonViewModel,
                     detalleViewModel = detalleViewModel,
-                    favoritosViewModel = favoritosViewModel
+                    favoritosViewModel = favoritosViewModel,
+                    loginViewModel = loginViewModel
                 )
             }
         }
-
     }
 }

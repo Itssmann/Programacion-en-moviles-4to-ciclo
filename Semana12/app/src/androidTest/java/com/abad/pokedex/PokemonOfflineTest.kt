@@ -21,6 +21,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import com.abad.pokedex.data.auth.SesionActual
 
 @RunWith(AndroidJUnit4::class)
 class PokemonOfflineTest {
@@ -147,7 +148,11 @@ class PokemonOfflineTest {
                         listOf(PokemonTypeSlot(PokemonTypeName("fire"))), emptyList(), emptyList())
                 }
             }
-            val repo = PokemonRepositoryImpl(api, db.pokemonDao())
+            val repo = PokemonRepositoryImpl(
+                api,
+                db.pokemonDao(),
+                SesionActual.paraPruebas()
+            )
             val store = ViewModelStore()
             val vm = withContext(Dispatchers.Main) {
                 ViewModelProvider(store, PokemonViewModelFactory(repo))[PokemonViewModel::class.java]

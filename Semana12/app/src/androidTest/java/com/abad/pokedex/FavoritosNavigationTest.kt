@@ -21,6 +21,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.abad.pokedex.data.auth.SesionActual
 
 @RunWith(AndroidJUnit4::class)
 class FavoritosNavigationTest {
@@ -36,7 +37,11 @@ class FavoritosNavigationTest {
         ).build()
 
         val api = ApiDePantallas()
-        val repo = PokemonRepositoryImpl(api, db.pokemonDao())
+        val repo = PokemonRepositoryImpl(
+            api,
+            db.pokemonDao(),
+            SesionActual.paraPruebas()
+        )
         val restauracion = StateRestorationTester(compose)
         val store = ViewModelStore()
 
