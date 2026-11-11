@@ -1,5 +1,10 @@
 package com.abad.pokedex
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,7 +35,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val pokemonViewModel: PokemonViewModel by viewModels {
-        PokemonViewModelFactory(container.pokemonRepository)
+        PokemonViewModelFactory(container.pokemonRepository, container.notificador)
     }
 
     private val detalleViewModel: DetalleViewModel by viewModels {
@@ -48,12 +53,29 @@ class MainActivity : ComponentActivity() {
     private val adminViewModel: AdminViewModel by viewModels {
         AdminViewModelFactory(
             repository = container.pokemonRepository,
-            authRepository = authRepository
+            authRepository = authRepository,
+            notificador = container.notificador
         )
+    }
+
+    private val permisoNotificaciones = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido -> container.notificador.resolverPermiso(concedido) }
+
+    private fun solicitarPermisoNotificaciones() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED) return
+        val preferencias = getPreferences(MODE_PRIVATE)
+        if (preferencias.getBoolean("notificaciones_solicitadas", false)) return
+        preferencias.edit().putBoolean("notificaciones_solicitadas", true).apply()
+        container.notificador.prepararSolicitudPermiso()
+        permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        solicitarPermisoNotificaciones()
 
         setContent {
             PokedexAbadTheme {

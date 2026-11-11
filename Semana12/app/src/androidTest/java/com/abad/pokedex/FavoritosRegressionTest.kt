@@ -319,6 +319,8 @@ class FavoritosRegressionTest {
         var entrada = CompletableDeferred<Unit>()
         var continuar = CompletableDeferred<Unit>()
 
+        override suspend fun obtenerListado(limite: Int, offset: Int): PokemonListResponse =
+            error("Este escenario no usa el listado Admin")
         override suspend fun obtenerPorTipo(
             tipo: String
         ): PokemonTypeResponse {

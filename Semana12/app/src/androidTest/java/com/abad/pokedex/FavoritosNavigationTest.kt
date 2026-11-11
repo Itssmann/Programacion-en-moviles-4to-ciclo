@@ -52,7 +52,7 @@ class FavoritosNavigationTest {
         compose.runOnIdle {
             lista = ViewModelProvider(
                 store,
-                PokemonViewModelFactory(repo)
+                PokemonViewModelFactory(repo, com.abad.pokedex.notification.Notificador { _, _ -> })
             )[PokemonViewModel::class.java]
 
             detalle = ViewModelProvider(
@@ -226,6 +226,8 @@ class FavoritosNavigationTest {
             "grass" to "bulbasaur"
         )
 
+        override suspend fun obtenerListado(limite: Int, offset: Int): PokemonListResponse =
+            error("Este escenario no usa el listado Admin")
         override suspend fun obtenerPorTipo(
             tipo: String
         ): PokemonTypeResponse {

@@ -102,7 +102,7 @@ class PokemonOfflineTest {
             repo.peticiones.receive().complete(Result.failure(IOException()))
             vm.refrescando.first { !it }
             withContext(Dispatchers.Main) {
-                val retenido = ViewModelProvider(store, PokemonViewModelFactory(repo))[PokemonViewModel::class.java]
+                val retenido = ViewModelProvider(store, PokemonViewModelFactory(repo, com.abad.pokedex.notification.Notificador { _, _ -> }))[PokemonViewModel::class.java]
                 assertSame(vm, retenido)
                 assertEquals("water", retenido.tipoActual.value)
                 assertEquals(listOf(agua), (retenido.estado.value as UiState.Exito).datos)
@@ -138,7 +138,9 @@ class PokemonOfflineTest {
             ).build()
             var offline = true
             val api = object : PokemonApiService {
-                override suspend fun obtenerPorTipo(tipo: String): PokemonTypeResponse {
+                override suspend fun obtenerListado(limite: Int, offset: Int): PokemonListResponse =
+            error("Este escenario no usa el listado Admin")
+        override suspend fun obtenerPorTipo(tipo: String): PokemonTypeResponse {
                     if (offline) throw IOException("Sin conexión de prueba")
                     return PokemonTypeResponse(listOf(PokemonTypeEntry(PokemonReference("charmander", ""))))
                 }
@@ -155,7 +157,7 @@ class PokemonOfflineTest {
             )
             val store = ViewModelStore()
             val vm = withContext(Dispatchers.Main) {
-                ViewModelProvider(store, PokemonViewModelFactory(repo))[PokemonViewModel::class.java]
+                ViewModelProvider(store, PokemonViewModelFactory(repo, com.abad.pokedex.notification.Notificador { _, _ -> }))[PokemonViewModel::class.java]
             }
             try {
                 vm.estado.first { it is UiState.Error }
@@ -184,7 +186,7 @@ class PokemonOfflineTest {
         val repo = RepoFalso(inicial)
         val store = ViewModelStore()
         val vm = withContext(Dispatchers.Main) {
-            ViewModelProvider(store, PokemonViewModelFactory(repo))[PokemonViewModel::class.java]
+            ViewModelProvider(store, PokemonViewModelFactory(repo, com.abad.pokedex.notification.Notificador { _, _ -> }))[PokemonViewModel::class.java]
         }
         try { bloque(repo, vm, store) }
         finally { withContext(Dispatchers.Main) { store.clear() } }
@@ -196,6 +198,7 @@ class PokemonOfflineTest {
         override val pokemones = datos.asStateFlow()
         override val favoritos = datos.map { lista -> lista.filter { it.esFavorito } }
         override fun observarDetalle(nombre: String) = datos.map { lista -> lista.find { it.nombre == nombre } }
+        override suspend fun sincronizarCatalogo(): Result<Int> = refrescar("fire")
         override suspend fun refrescar(tipo: String): Result<Int> {
             val respuesta = CompletableDeferred<Result<Int>>()
             peticiones.send(respuesta)

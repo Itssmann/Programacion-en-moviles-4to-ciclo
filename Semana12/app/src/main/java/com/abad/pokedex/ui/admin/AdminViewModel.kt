@@ -1,6 +1,7 @@
 package com.abad.pokedex.ui.admin
 
 import androidx.lifecycle.ViewModel
+import com.abad.pokedex.notification.Notificador
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.abad.pokedex.data.auth.AuthRepository
@@ -20,7 +21,8 @@ data class AdminUiState(
 
 class AdminViewModel(
     private val repository: PokemonRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val notificador: Notificador
 ) : ViewModel() {
 
     private val _estado = MutableStateFlow(AdminUiState())
@@ -107,6 +109,9 @@ class AdminViewModel(
                 }
 
                 val resultado = repository.sincronizarCatalogo()
+                resultado.onSuccess { n ->
+                    notificador.mostrar("Datos actualizados", "Se guardaron $n elementos")
+                }
 
                 _estado.value = if (resultado.isSuccess) {
                     AdminUiState(
@@ -135,7 +140,8 @@ class AdminViewModel(
 
 class AdminViewModelFactory(
     private val repository: PokemonRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val notificador: Notificador
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -145,7 +151,8 @@ class AdminViewModelFactory(
         if (modelClass.isAssignableFrom(AdminViewModel::class.java)) {
             return AdminViewModel(
                 repository = repository,
-                authRepository = authRepository
+                authRepository = authRepository,
+                notificador = notificador
             ) as T
         }
 

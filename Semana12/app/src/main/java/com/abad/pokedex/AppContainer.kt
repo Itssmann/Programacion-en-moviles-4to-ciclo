@@ -12,6 +12,8 @@ import com.abad.pokedex.data.repository.PokemonRepositoryImpl
 
 class AppContainer(context: Context) {
 
+    val notificador = com.abad.pokedex.notification.NotificadorAndroid.instancia(context)
+
     private val database: AppDatabase by lazy {
         Room.databaseBuilder(
             context.applicationContext,

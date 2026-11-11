@@ -1,6 +1,7 @@
 package com.abad.pokedex.ui.lista
 
 import androidx.lifecycle.ViewModel
+import com.abad.pokedex.notification.Notificador
 import androidx.lifecycle.viewModelScope
 import com.abad.pokedex.data.repository.PokemonRepository
 import com.abad.pokedex.domain.model.Pokemon
@@ -15,7 +16,8 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class PokemonViewModel(
-    private val repository: PokemonRepository
+    private val repository: PokemonRepository,
+    private val notificador: Notificador
 ) : ViewModel() {
     private val _estado = MutableStateFlow<UiState<List<Pokemon>>>(UiState.Cargando)
     val estado: StateFlow<UiState<List<Pokemon>>> = _estado.asStateFlow()
@@ -82,6 +84,9 @@ class PokemonViewModel(
             }
             sincronizaciones[tipo] = Sincronizacion(false, resultado.exceptionOrNull())
             publicarEstado()
+            resultado.onSuccess { n ->
+                notificador.mostrar("Datos actualizados", "Se guardaron $n elementos")
+            }
         }
     }
 
