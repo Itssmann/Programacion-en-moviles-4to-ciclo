@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "156289606982",
+    "project_id": "pokedexabad",
+    "storage_bucket": "pokedexabad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:156289606982:android:9c1e3e3b6251b8fd71f147",
+        "android_client_info": {
+          "package_name": "com.abad.pokedex"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvuf3Onje0bgf9bagBqcbFo6Tbr1Y2F80"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
