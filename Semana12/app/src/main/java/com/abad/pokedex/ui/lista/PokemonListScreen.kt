@@ -22,6 +22,7 @@ import com.abad.pokedex.ui.UiState
 import com.abad.pokedex.ui.components.Cargando
 import com.abad.pokedex.ui.components.ErrorView
 import com.abad.pokedex.ui.components.EtiquetaTipo
+import com.abad.pokedex.ui.components.PokemonImage
 
 @Composable
 fun PokemonListScreen(
@@ -192,6 +193,16 @@ private fun PokemonCard(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            PokemonImage(
+                url = pokemon.imagenUrl,
+                contentDescription = pokemon.nombre,
+                modifier = Modifier
+                    .size(60.dp)
+                    .clickable(onClick = onClick)
+            )
+
+            Spacer(Modifier.width(14.dp))
+
             Column(
                 modifier = Modifier
                     .weight(1f)
