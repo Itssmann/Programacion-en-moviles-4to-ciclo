@@ -9,6 +9,8 @@ interface VetRepository {
 
     suspend fun login(correo: String, clave: String): Usuario?
     suspend fun obtenerUsuarioPorCorreo(correo: String): Usuario?
+    suspend fun obtenerUsuarioPorId(id: Int): Usuario?
+    suspend fun registrarUsuario(nombre: String, correo: String, clave: String, rol: String, telefono: String?, distrito: String?): Long
     suspend fun registrarUsuario(nombre: String, correo: String, clave: String, rol: String): Long
 
     fun observarMascotas(duenoId: Int): Flow<List<MascotaConDueno>>
@@ -28,7 +30,7 @@ interface VetRepository {
 
     suspend fun crearCita(
         mascotaId: Int,
-        servicioId: Int,
+        servicioIds: List<Int>,
         fecha: String,
         hora: String,
         nota: String
@@ -55,5 +57,14 @@ interface VetRepository {
     fun observarPesosHistorial(mascotaId: Int): Flow<List<CitaConDetalle>>
     suspend fun reprogramarCita(id: Int, fecha: String, hora: String)
     suspend fun contarOcupadasExcluyendo(fecha: String, hora: String, citaId: Int): Int
-}
 
+    fun observarNotificaciones(usuarioId: Int): Flow<List<Notificacion>>
+    fun contarNotificacionesNoLeidas(usuarioId: Int): Flow<Int>
+    suspend fun marcarNotificacionLeida(id: Int)
+    suspend fun marcarTodasNotificacionesLeidas(usuarioId: Int)
+    suspend fun eliminarNotificacion(id: Int)
+
+    fun observarServiciosDeCita(citaId: Int): Flow<List<Servicio>>
+    fun observarUsuarios(): Flow<List<Usuario>>
+    fun observarTodasCitas(): Flow<List<CitaConDetalle>>
+}

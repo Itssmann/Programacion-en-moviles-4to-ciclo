@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 fun PerfilScreen(
     nombre: String,
     correo: String,
+    telefono: String? = null,
+    distrito: String? = null,
     cantidadMascotas: Int,
     citasProximas: Int,
     atenciones: Int,
@@ -111,6 +113,20 @@ fun PerfilScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (!telefono.isNullOrBlank()) {
+                            Text(
+                                "Teléfono: $telefono",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (!distrito.isNullOrBlank()) {
+                            Text(
+                                "Distrito: $distrito",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = Color(0xFFD1FAE5)

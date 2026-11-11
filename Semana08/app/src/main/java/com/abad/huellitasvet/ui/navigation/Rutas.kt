@@ -12,6 +12,7 @@ object Rutas {
     const val PEDIR_CITA = "pedir_cita"
     const val MIS_CITAS = "mis_citas"
     const val PERFIL = "perfil"
+    const val NOTIFICACIONES = "notificaciones"
 
     const val PANEL = "panel"
     const val AGENDA = "agenda"
@@ -20,6 +21,8 @@ object Rutas {
     const val SERVICIOS = "servicios"
     const val FORMULARIO_SERVICIO = "formulario_servicio"
     const val AJUSTES = "ajustes"
+
+    const val ADMIN_DASHBOARD = "admin_dashboard"
 
     fun fichaMascota(id: Int) = "ficha_mascota/$id"
     fun atenderCita(id: Int) = "atender_cita/$id"

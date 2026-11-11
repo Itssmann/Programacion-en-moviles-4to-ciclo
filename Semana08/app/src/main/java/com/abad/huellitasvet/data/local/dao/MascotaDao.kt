@@ -37,4 +37,7 @@ interface MascotaDao {
 
     @Query("SELECT COUNT(*) FROM citas WHERE mascotaId = :mascotaId")
     suspend fun contarCitas(mascotaId: Int): Int
+
+    @Query("SELECT * FROM mascotas WHERE id = :id")
+    suspend fun obtener(id: Int): Mascota?
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.abad.huellitasvet.model.MascotaEdadUtils
 import com.abad.huellitasvet.ui.components.MascotaAvatar
 import com.abad.huellitasvet.ui.components.graficos.GraficoLineas
 import com.abad.huellitasvet.viewmodel.MascotaViewModel
@@ -92,9 +93,10 @@ fun FichaMascotaScreen(
                 CircularProgressIndicator()
             }
         } else {
-            val edad = LocalDate.now().year - mascota.anioNacimiento
+            val edadTexto = MascotaEdadUtils.calcularEdadTexto(mascota.anioNacimiento)
+            val fechaNac = MascotaEdadUtils.parseFechaNacimiento(mascota.anioNacimiento).format(DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("es")))
             val especieRaza = "${mascota.especie.lowercase().replaceFirstChar { it.uppercase() }} · ${mascota.raza}"
-            val sexoPeso = "$edad años · ${mascota.sexo.lowercase().replaceFirstChar { it.uppercase() }} · ${mascota.peso} kg"
+            val sexoPeso = "$edadTexto · ${mascota.sexo.lowercase().replaceFirstChar { it.uppercase() }} · ${mascota.peso} kg"
 
             val puntosGrafico = pesosHistorial.map { item ->
                 val fechaFormateada = runCatching {
@@ -120,9 +122,7 @@ fun FichaMascotaScreen(
                     )
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -132,11 +132,12 @@ fun FichaMascotaScreen(
                         )
 
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text(
                                 text = mascota.nombre,
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
@@ -146,98 +147,57 @@ fun FichaMascotaScreen(
                             )
                             Text(
                                 text = sexoPeso,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
                 }
 
-                // Buttons row ("Pedir cita" & "Editar")
+                // Action buttons row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
                         onClick = onPedirCita,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
+                        modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Pedir cita", fontWeight = FontWeight.SemiBold)
+                        Text("Pedir cita", fontWeight = FontWeight.Bold)
                     }
 
                     OutlinedButton(
                         onClick = onEditar,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Editar", fontWeight = FontWeight.SemiBold)
+                        Text("Editar", fontWeight = FontWeight.Bold)
                     }
                 }
 
-                // Segmented control for tabs
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
+                // Tabs: Historial / Datos
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable { pestaña = 0 },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (pestaña == 0) MaterialTheme.colorScheme.surface else Color.Transparent
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    "Datos",
-                                    color = if (pestaña == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable { pestaña = 1 },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (pestaña == 1) MaterialTheme.colorScheme.surface else Color.Transparent
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    "Historial clínico",
-                                    color = if (pestaña == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
+                    TabButton(
+                        titulo = "Historial médico",
+                        seleccionado = pestaña == 0,
+                        onClick = { pestaña = 0 },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TabButton(
+                        titulo = "Información",
+                        seleccionado = pestaña == 1,
+                        onClick = { pestaña = 1 },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
-                if (pestaña == 0) {
+                if (pestaña == 1) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -257,7 +217,7 @@ fun FichaMascotaScreen(
                                 Text("Especie: ${mascota.especie}", style = MaterialTheme.typography.bodyMedium)
                                 Text("Raza: ${mascota.raza}", style = MaterialTheme.typography.bodyMedium)
                                 Text("Sexo: ${mascota.sexo}", style = MaterialTheme.typography.bodyMedium)
-                                Text("Nacimiento: ${mascota.anioNacimiento}", style = MaterialTheme.typography.bodyMedium)
+                                Text("Nacimiento: $fechaNac ($edadTexto)", style = MaterialTheme.typography.bodyMedium)
                                 Text("Peso: ${mascota.peso} kg", style = MaterialTheme.typography.bodyMedium)
                             }
                         }
@@ -277,107 +237,83 @@ fun FichaMascotaScreen(
                         }
                     }
                 } else {
-                    if (historial.isEmpty()) {
+                    if (historial.isEmpty() && pesosHistorial.isEmpty()) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
+                            modifier = Modifier.fillMaxWidth().weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "Aún no tiene atenciones registradas",
-                                style = MaterialTheme.typography.bodyMedium,
+                                "No hay historial médico registrado",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     } else {
                         LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 20.dp)
+                            modifier = Modifier.fillMaxWidth().weight(1f)
                         ) {
-                            item {
-                                GraficoLineas(datos = puntosGrafico)
-                            }
-
-                            items(historial, key = { it.cita.id }) { item ->
-                                val fechaFormateada = runCatching {
-                                    LocalDate.parse(item.cita.fecha)
-                                        .format(DateTimeFormatter.ofPattern("dd MMM", Locale.forLanguageTag("es")))
-                                }.getOrDefault(item.cita.fecha)
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // Timeline indicator
-                                    Surface(
-                                        modifier = Modifier.size(24.dp),
-                                        shape = CircleShape,
-                                        color = Color(0xFF059669)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                "✓",
-                                                color = Color.White,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-
-                                    // History card
+                            if (puntosGrafico.size >= 2) {
+                                item {
                                     ElevatedCard(
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.elevatedCardColors(
-                                            containerColor = MaterialTheme.colorScheme.surface
-                                        )
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp)
                                     ) {
                                         Column(
                                             modifier = Modifier.padding(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = item.servicio.nombre,
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Text(
-                                                    text = fechaFormateada,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = Color(0xFF059669),
-                                                    fontWeight = FontWeight.SemiBold
-                                                )
-                                            }
+                                            Text(
+                                                "Evolución de peso (kg)",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            GraficoLineas(
+                                                datos = puntosGrafico,
+                                                modifier = Modifier.fillMaxWidth().height(160.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
 
-                                            if (!item.cita.diagnostico.isNullOrBlank()) {
-                                                Text(
-                                                    text = item.cita.diagnostico,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text("❤️", style = MaterialTheme.typography.bodySmall)
-                                                Text(
-                                                    text = "Peso: ${item.cita.pesoRegistrado ?: mascota.peso} kg",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            }
+                            items(historial, key = { it.cita.id }) { detalleCita ->
+                                ElevatedCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            "📅 ${detalleCita.cita.fecha} · ${detalleCita.cita.hora}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            "Servicio: ${detalleCita.servicio.nombre}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        if (!detalleCita.cita.diagnostico.isNullOrBlank()) {
+                                            Text(
+                                                "Diagnóstico: ${detalleCita.cita.diagnostico}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        if (!detalleCita.cita.tratamiento.isNullOrBlank()) {
+                                            Text(
+                                                "Tratamiento: ${detalleCita.cita.tratamiento}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (detalleCita.cita.pesoRegistrado != null) {
+                                            Text(
+                                                "Peso registrado: ${detalleCita.cita.pesoRegistrado} kg",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Bold
+                                            )
                                         }
                                     }
                                 }
@@ -386,6 +322,30 @@ fun FichaMascotaScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun TabButton(
+    titulo: String,
+    seleccionado: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(40.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = if (seleccionado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = titulo,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (seleccionado) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

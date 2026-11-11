@@ -29,7 +29,7 @@ fun InicioScreen(
     onAgregar: () -> Unit,
     onPedirCita: () -> Unit,
     onMisCitas: () -> Unit,
-    onPerfil: () -> Unit,
+    onNotificaciones: () -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
     val mascotas by viewModel.mascotas.collectAsState()
@@ -73,7 +73,7 @@ fun InicioScreen(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    IconButton(onClick = onPerfil) {
+                    IconButton(onClick = onNotificaciones) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notificaciones",

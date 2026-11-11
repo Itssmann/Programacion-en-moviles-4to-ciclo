@@ -44,6 +44,21 @@ class SesionViewModel(
         0
     )
 
+    init {
+        viewModelScope.launch {
+            preferencias.usuarioId.collect { id ->
+                if (id > 0) {
+                    val u = repository.obtenerUsuarioPorId(id)
+                    if (u != null) {
+                        _usuarioActual.value = u
+                    }
+                } else {
+                    _usuarioActual.value = null
+                }
+            }
+        }
+    }
+
     fun login(
         correo: String,
         clave: String,
@@ -54,7 +69,7 @@ class SesionViewModel(
             return
         }
 
-        if (rolSeleccionado != "CLIENTE" && rolSeleccionado != "ADMIN") {
+        if (rolSeleccionado !in listOf("CLIENTE", "VET", "ADMIN")) {
             _error.value = "Selecciona un perfil válido"
             return
         }
@@ -110,4 +125,3 @@ class SesionViewModel(
         }
     }
 }
-
