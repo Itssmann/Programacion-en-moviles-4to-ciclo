@@ -3,6 +3,7 @@ package com.abad.pokedex.data.local
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Transaction
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
@@ -22,18 +23,36 @@ interface PokemonDao {
         nombre: String
     ): PokemonEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun guardarTodos(
-        pokemones: List<PokemonEntity>
+    @Query("SELECT * FROM pokemones WHERE nombre = :nombre LIMIT 1")
+    fun observarPorNombre(nombre: String): Flow<PokemonEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertarNuevos(pokemones: List<PokemonEntity>)
+
+    @Query("""
+        UPDATE pokemones SET imagenUrl = :imagenUrl, tipos = :tipos,
+        altura = :altura, peso = :peso, habilidades = :habilidades,
+        estadisticas = :estadisticas WHERE nombre = :nombre
+    """)
+    suspend fun actualizarDatosRemotos(
+        nombre: String, imagenUrl: String?, tipos: String,
+        altura: Int, peso: Int, habilidades: String, estadisticas: String
     )
 
-    @Query(
-        "UPDATE pokemones SET esFavorito = :favorito WHERE nombre = :nombre"
-    )
-    suspend fun actualizarFavorito(
-        nombre: String,
-        favorito: Boolean
-    )
+    // El favorito es exclusivamente local: ninguna actualización remota lo escribe.
+    @Transaction
+    suspend fun guardarTodos(pokemones: List<PokemonEntity>) {
+        insertarNuevos(pokemones.map { it.copy(esFavorito = false) })
+        pokemones.forEach {
+            actualizarDatosRemotos(
+                it.nombre, it.imagenUrl, it.tipos, it.altura, it.peso,
+                it.habilidades, it.estadisticas
+            )
+        }
+    }
+
+    @Query("UPDATE pokemones SET esFavorito = NOT esFavorito WHERE nombre = :nombre")
+    suspend fun alternarFavorito(nombre: String)
 
     @Query("SELECT COUNT(*) FROM pokemones")
     suspend fun contarTodos(): Int

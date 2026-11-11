@@ -7,8 +7,6 @@ import com.abad.pokedex.data.remote.PokemonApiService
 import com.abad.pokedex.domain.model.Pokemon
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class PokemonRepositoryImpl(
@@ -16,80 +14,48 @@ class PokemonRepositoryImpl(
     private val dao: PokemonDao
 ) : PokemonRepository {
 
-    private val _pokemones =
-        MutableStateFlow<List<Pokemon>>(emptyList())
-
-    override val pokemones: Flow<List<Pokemon>> = _pokemones
-
-    override val favoritos: Flow<List<Pokemon>> =
-        dao.observarFavoritos().map { lista ->
-            lista.map { it.toDomain() }
+    override val pokemones: Flow<List<Pokemon>> =
+        dao.observarTodos().map { entidades ->
+            entidades.map { it.toDomain() }
         }
 
-    override suspend fun refrescar(
-        tipo: String
-    ): Result<Int> {
+    override val favoritos: Flow<List<Pokemon>> =
+        dao.observarFavoritos().map { entidades ->
+            entidades.map { it.toDomain() }
+        }
+
+    override fun observarDetalle(nombre: String): Flow<Pokemon?> =
+        dao.observarPorNombre(nombre).map { it?.toDomain() }
+
+    override suspend fun refrescar(tipo: String): Result<Int> {
         return try {
             val respuesta = api.obtenerPorTipo(tipo)
 
-            val lista = respuesta.pokemon
-                .take(20)
-                .map { entrada ->
-                    val detalle = api.obtenerDetalle(
-                        entrada.pokemon.name
-                    )
+            val lista = respuesta.pokemon.take(20).map { entrada ->
+                val detalle = api.obtenerDetalle(entrada.pokemon.name)
 
-                    Pokemon(
-                        nombre = detalle.name,
-                        imagenUrl = detalle.sprites.frontDefault,
-                        tipos = detalle.types.map {
-                            it.type.name
-                        },
-                        altura = detalle.height,
-                        peso = detalle.weight,
-                        habilidades = detalle.abilities.map {
-                            it.ability.name
-                        },
-                        estadisticas = detalle.stats.associate {
-                            it.stat.name to it.baseStat
-                        }
-                    )
-                }
-
-            val conservados = lista.map { pokemon ->
-                val anterior = dao.obtenerPorNombre(
-                    pokemon.nombre
-                )
-
-                pokemon.copy(
-                    esFavorito = anterior?.esFavorito ?: false
+                Pokemon(
+                    nombre = detalle.name,
+                    imagenUrl = detalle.sprites.frontDefault,
+                    tipos = detalle.types.map { it.type.name },
+                    altura = detalle.height,
+                    peso = detalle.weight,
+                    habilidades = detalle.abilities.map {
+                        it.ability.name
+                    },
+                    estadisticas = detalle.stats.associate {
+                        it.stat.name to it.baseStat
+                    }
                 )
             }
 
-            dao.guardarTodos(
-                conservados.map { it.toEntity() }
-            )
-
-            _pokemones.value = conservados
-
-            Result.success(conservados.size)
+            dao.guardarTodos(lista.map { it.toEntity() })
+            Result.success(lista.size)
 
         } catch (error: CancellationException) {
             throw error
-
         } catch (error: Exception) {
-            val guardados: List<Pokemon> =
-                dao.observarTodos()
-                    .first()
-                    .map { it.toDomain() }
-                    .filter { tipo in it.tipos }
-
-            if (guardados.isNotEmpty()) {
-                _pokemones.value = guardados
-                Result.success(guardados.size)
-            } else {
-                Result.failure(error)
-            }
+            Result.failure(error)
         }
     }
 
@@ -99,15 +65,10 @@ class PokemonRepositoryImpl(
         return try {
             val detalle = api.obtenerDetalle(nombre)
 
-            val anterior = dao.obtenerPorNombre(nombre)
-
             val pokemon = Pokemon(
                 nombre = detalle.name,
                 imagenUrl = detalle.sprites.frontDefault,
-                tipos = detalle.types.map {
-                    it.type.name
-                },
-                esFavorito = anterior?.esFavorito ?: false,
+                tipos = detalle.types.map { it.type.name },
                 altura = detalle.height,
                 peso = detalle.weight,
                 habilidades = detalle.abilities.map {
@@ -118,18 +79,13 @@ class PokemonRepositoryImpl(
                 }
             )
 
-            dao.guardarTodos(
-                listOf(pokemon.toEntity())
-            )
-
-            Result.success(pokemon)
+            dao.guardarTodos(listOf(pokemon.toEntity()))
+            Result.success(requireNotNull(dao.obtenerPorNombre(pokemon.nombre)).toDomain())
 
         } catch (error: CancellationException) {
             throw error
-
         } catch (error: Exception) {
             val guardado = dao.obtenerPorNombre(nombre)
-
             if (guardado != null) {
                 Result.success(guardado.toDomain())
             } else {
@@ -139,12 +95,7 @@ class PokemonRepositoryImpl(
     }
 
     override suspend fun alternarFavorito(nombre: String) {
-        val actual = dao.obtenerPorNombre(nombre) ?: return
-
-        dao.actualizarFavorito(
-            nombre = nombre,
-            favorito = !actual.esFavorito
-        )
+        dao.alternarFavorito(nombre)
     }
 
     override suspend fun cantidadGuardada(): Int =
@@ -155,6 +106,5 @@ class PokemonRepositoryImpl(
 
     override suspend fun limpiarCache() {
         dao.eliminarTodos()
-        _pokemones.value = emptyList()
     }
 }

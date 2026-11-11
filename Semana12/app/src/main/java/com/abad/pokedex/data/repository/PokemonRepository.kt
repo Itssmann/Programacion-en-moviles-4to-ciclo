@@ -1,4 +1,3 @@
-
 package com.abad.pokedex.data.repository
 
 import com.abad.pokedex.domain.model.Pokemon
@@ -9,6 +8,8 @@ interface PokemonRepository {
     val pokemones: Flow<List<Pokemon>>
 
     val favoritos: Flow<List<Pokemon>>
+
+    fun observarDetalle(nombre: String): Flow<Pokemon?>
 
     suspend fun refrescar(tipo: String): Result<Int>
 

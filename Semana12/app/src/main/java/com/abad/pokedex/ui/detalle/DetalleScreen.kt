@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abad.pokedex.domain.model.Pokemon
 import com.abad.pokedex.ui.UiState
 import com.abad.pokedex.ui.components.Cargando
@@ -19,7 +20,7 @@ fun DetalleScreen(
     viewModel: DetalleViewModel,
     onVolver: () -> Unit
 ) {
-    val estado by viewModel.estado.collectAsState()
+    val estado by viewModel.estado.collectAsStateWithLifecycle()
 
     LaunchedEffect(nombre) {
         viewModel.cargarDetalle(nombre)
@@ -44,14 +45,22 @@ fun DetalleScreen(
             )
 
             is UiState.Exito -> {
-                ContenidoDetalle(actual.datos)
+                ContenidoDetalle(
+                    pokemon = actual.datos,
+                    onFavoritoClick = {
+                        viewModel.alternarFavorito()
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ContenidoDetalle(pokemon: Pokemon) {
+private fun ContenidoDetalle(
+    pokemon: Pokemon,
+    onFavoritoClick: () -> Unit
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -59,12 +68,26 @@ private fun ContenidoDetalle(pokemon: Pokemon) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text(
-                text = pokemon.nombre.replaceFirstChar {
-                    it.uppercase()
-                },
-                style = MaterialTheme.typography.headlineLarge
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = pokemon.nombre.replaceFirstChar {
+                        it.uppercase()
+                    },
+                    style = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier.weight(1f)
+                )
+
+                TextButton(onClick = onFavoritoClick) {
+                    Text(
+                        text = if (pokemon.esFavorito) "♥" else "♡",
+                        style = MaterialTheme.typography.headlineLarge
+                    )
+                }
+            }
         }
 
         item {
@@ -127,12 +150,12 @@ private fun ContenidoDetalle(pokemon: Pokemon) {
 
         items(pokemon.estadisticas.toList()) { (nombre, valor) ->
             Column {
-                Text(
-                    "${nombre.replace("-", " ")}: $valor"
-                )
+                Text("${nombre.replace("-", " ")}: $valor")
 
                 LinearProgressIndicator(
-                    progress = { (valor / 255f).coerceIn(0f, 1f) },
+                    progress = {
+                        (valor / 255f).coerceIn(0f, 1f)
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
