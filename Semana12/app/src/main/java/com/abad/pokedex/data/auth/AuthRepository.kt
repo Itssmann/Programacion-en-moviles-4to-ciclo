@@ -6,6 +6,10 @@ interface AuthRepository {
 
     val usuarioActual: Sesion?
 
+    suspend fun obtenerSesionActualizada(): Sesion? {
+        return usuarioActual
+    }
+
     suspend fun iniciarSesion(
         correo: String,
         contrasena: String

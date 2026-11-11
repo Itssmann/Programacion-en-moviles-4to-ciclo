@@ -5,14 +5,27 @@ import com.abad.pokedex.domain.model.Sesion
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthRepository(
-    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : AuthRepository {
 
     override val usuarioActual: Sesion?
-        get() = firebaseAuth.currentUser?.aSesion()
+        get() = firebaseAuth.currentUser?.let { usuario ->
+            Sesion(
+                uid = usuario.uid,
+                correo = usuario.email.orEmpty(),
+                rol = Rol.USUARIO
+            )
+        }
+
+    override suspend fun obtenerSesionActualizada(): Sesion? {
+        val usuario = firebaseAuth.currentUser ?: return null
+        return usuario.obtenerSesion()
+    }
 
     override suspend fun iniciarSesion(
         correo: String,
@@ -26,7 +39,8 @@ class FirebaseAuthRepository(
             val usuario = resultado.user
                 ?: error("No se pudo obtener el usuario.")
 
-            Result.success(usuario.aSesion())
+            Result.success(usuario.obtenerSesion())
+
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -51,7 +65,8 @@ class FirebaseAuthRepository(
 
             usuario.updateProfile(perfil).await()
 
-            Result.success(usuario.aSesion())
+            Result.success(usuario.obtenerSesion())
+
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -61,11 +76,36 @@ class FirebaseAuthRepository(
         firebaseAuth.signOut()
     }
 
-    private fun FirebaseUser.aSesion(): Sesion {
+    private suspend fun FirebaseUser.obtenerSesion(): Sesion {
+        val documento = firestore
+            .collection("usuarios")
+            .document(uid)
+            .get()
+            .await()
+
+        val rolFirestore = documento.getString("rol")
+            ?.trim()
+            ?.lowercase()
+
+        val rol = when (rolFirestore) {
+            "admin" -> Rol.ADMIN
+            else -> Rol.USUARIO
+        }
+
+        android.util.Log.d(
+            "POKEDEX_ROL",
+            "Rol recibido: '$rolFirestore', rol asignado: $rol"
+        )
+
+        android.util.Log.d(
+            "POKEDEX_ROL",
+            "Documento existe: ${documento.exists()}, rol: ${documento.getString("rol")}, rol asignado: $rol"
+        )
+
         return Sesion(
             uid = uid,
             correo = email.orEmpty(),
-            rol = Rol.USUARIO
+            rol = rol
         )
     }
 }

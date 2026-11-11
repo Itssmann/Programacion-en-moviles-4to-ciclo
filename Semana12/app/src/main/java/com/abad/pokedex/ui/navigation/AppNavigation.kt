@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -14,6 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.abad.pokedex.domain.model.Rol
+import com.abad.pokedex.ui.admin.AdminScreen
+import com.abad.pokedex.ui.admin.AdminViewModel
 import com.abad.pokedex.ui.detalle.DetalleScreen
 import com.abad.pokedex.ui.detalle.DetalleViewModel
 import com.abad.pokedex.ui.favoritos.FavoritosScreen
@@ -32,7 +36,8 @@ fun AppNavigation(
     pokemonViewModel: PokemonViewModel,
     detalleViewModel: DetalleViewModel,
     favoritosViewModel: FavoritosViewModel,
-    loginViewModel: LoginViewModel? = null
+    loginViewModel: LoginViewModel? = null,
+    adminViewModel: AdminViewModel? = null
 ) {
     var pantalla by rememberSaveable {
         mutableStateOf("inicio")
@@ -52,17 +57,19 @@ fun AppNavigation(
     val sesion = loginEstado?.value?.sesion
     val correo = sesion?.correo
 
-    // Sin LoginViewModel se conserva el modo de pruebas anterior.
     val requiereAutenticacion = loginViewModel != null
     val autenticado = !requiereAutenticacion || sesion != null
 
+    val esAdmin = sesion?.rol == Rol.ADMIN &&
+            adminViewModel != null
+
     val nombre = if (correo != null) {
-        FirebaseAuth.getInstance().currentUser?.displayName
+        FirebaseAuth.getInstance()
+            .currentUser?.displayName
     } else {
         null
     }
 
-    // Redirigir cuando se inicia o se cierra sesión.
     LaunchedEffect(autenticado, sesion?.uid) {
         if (!autenticado) {
             pantalla = "bienvenida"
@@ -78,11 +85,20 @@ fun AppNavigation(
         }
     }
 
+    // Impedir que una sesión sin rol ADMIN
+    // permanezca en la pantalla administrativa.
+    LaunchedEffect(esAdmin, pantalla) {
+        if (pantalla == "admin" && !esAdmin) {
+            pantalla = "inicio"
+        }
+    }
+
     BackHandler(
         enabled = pantalla in listOf(
             "detalle",
             "login",
-            "registro"
+            "registro",
+            "admin"
         )
     ) {
         when (pantalla) {
@@ -97,6 +113,10 @@ fun AppNavigation(
 
             "login" -> {
                 pantalla = "bienvenida"
+            }
+
+            "admin" -> {
+                pantalla = "inicio"
             }
         }
     }
@@ -113,34 +133,59 @@ fun AppNavigation(
                 )
             ) {
                 NavigationBar {
-                    val opciones = listOf(
-                        Triple(
-                            "inicio",
-                            "Inicio",
-                            Icons.Default.Home
-                        ),
-                        Triple(
-                            "catalogo",
-                            "Pokémon",
-                            Icons.AutoMirrored.Filled.List
-                        ),
-                        Triple(
-                            "favoritos",
-                            "Favoritos",
-                            Icons.Default.Favorite
-                        ),
-                        Triple(
-                            "perfil",
-                            "Perfil",
-                            Icons.Default.Person
+                    val opciones = buildList {
+                        add(
+                            Triple(
+                                "inicio",
+                                "Inicio",
+                                Icons.Default.Home
+                            )
                         )
-                    )
+
+                        add(
+                            Triple(
+                                "catalogo",
+                                "Pokémon",
+                                Icons.AutoMirrored.Filled.List
+                            )
+                        )
+
+                        add(
+                            Triple(
+                                "favoritos",
+                                "Favoritos",
+                                Icons.Default.Favorite
+                            )
+                        )
+
+                        add(
+                            Triple(
+                                "perfil",
+                                "Perfil",
+                                Icons.Default.Person
+                            )
+                        )
+
+                        if (esAdmin) {
+                            add(
+                                Triple(
+                                    "admin",
+                                    "Admin",
+                                    Icons.Default.AdminPanelSettings
+                                )
+                            )
+                        }
+                    }
 
                     opciones.forEach { (ruta, titulo, icono) ->
                         NavigationBarItem(
                             selected = pantalla == ruta,
                             onClick = {
                                 pantalla = ruta
+
+                                if (ruta == "admin") {
+                                    adminViewModel?.actualizarTotales()
+                                }
                             },
                             icon = {
                                 Icon(
@@ -162,16 +207,21 @@ fun AppNavigation(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // No mostrar pantallas privadas sin sesión.
-            if (!autenticado && pantalla !in listOf(
+            if (
+                !autenticado &&
+                pantalla !in listOf(
                     "bienvenida",
                     "login",
                     "registro"
                 )
             ) {
                 PantallaBienvenida(
-                    onLogin = { pantalla = "login" },
-                    onRegistro = { pantalla = "registro" }
+                    onLogin = {
+                        pantalla = "login"
+                    },
+                    onRegistro = {
+                        pantalla = "registro"
+                    }
                 )
             } else {
                 when (pantalla) {
@@ -234,6 +284,27 @@ fun AppNavigation(
                             loginViewModel?.cerrarSesion()
                         }
                     )
+
+                    "admin" -> {
+                        if (esAdmin && adminViewModel != null) {
+                            val adminEstado by adminViewModel.estado
+                                .collectAsStateWithLifecycle()
+
+                            AdminScreen(
+                                totalPokemones = adminEstado.totalPokemones,
+                                totalFavoritos = adminEstado.totalFavoritos,
+                                onLimpiarCache = {
+                                    adminViewModel.limpiarCache()
+                                },
+                                onSincronizar = {
+                                    adminViewModel.sincronizar()
+                                },
+                                cargando = adminEstado.cargando,
+                                mensaje = adminEstado.mensaje
+                            )
+
+                        }
+                    }
 
                     "login" -> {
                         if (loginViewModel != null) {

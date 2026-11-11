@@ -193,4 +193,43 @@ class PokemonRepositoryImpl(
     override suspend fun limpiarCache() {
         dao.eliminarTodos()
     }
+
+    override suspend fun sincronizarCatalogo(): Result<Int> {
+        return try {
+            val respuesta = api.obtenerListado(
+                limite = 60,
+                offset = 0
+            )
+
+            val lista = respuesta.results.map { entrada ->
+                val detalle = api.obtenerDetalle(entrada.name)
+
+                Pokemon(
+                    nombre = detalle.name,
+                    imagenUrl = detalle.sprites.frontDefault,
+                    tipos = detalle.types.map { it.type.name },
+                    altura = detalle.height,
+                    peso = detalle.weight,
+                    habilidades = detalle.abilities.map {
+                        it.ability.name
+                    },
+                    estadisticas = detalle.stats.associate {
+                        it.stat.name to it.baseStat
+                    }
+                )
+            }
+
+            dao.guardarTodos(
+                lista.map { it.toEntity() }
+            )
+
+            Result.success(lista.size)
+
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Result.failure(error)
+        }
+    }
+
 }

@@ -7,6 +7,7 @@ import com.abad.pokedex.data.auth.AuthRepository
 import com.abad.pokedex.domain.model.Sesion
 import com.google.firebase.auth.FirebaseAuthException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -22,10 +23,40 @@ class LoginViewModel(
 ) : ViewModel() {
 
     private val _estado = MutableStateFlow(
-        LoginUiState(sesion = repository.usuarioActual)
+        LoginUiState(
+            sesion = repository.usuarioActual
+        )
     )
 
     val estado = _estado.asStateFlow()
+
+    private var trabajoAutenticacion: Job? = null
+
+    init {
+        if (repository.usuarioActual != null) {
+            trabajoAutenticacion = viewModelScope.launch {
+                _estado.value = _estado.value.copy(
+                    cargando = true,
+                    error = null
+                )
+
+                try {
+                    val sesion = repository.obtenerSesionActualizada()
+
+                    _estado.value = LoginUiState(
+                        sesion = sesion
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    _estado.value = LoginUiState(
+                        sesion = repository.usuarioActual,
+                        error = "No se pudo actualizar el rol. Comprueba tu conexión."
+                    )
+                }
+            }
+        }
+    }
 
     fun iniciarSesion(
         correo: String,
@@ -90,7 +121,7 @@ class LoginViewModel(
     private fun ejecutarAutenticacion(
         operacion: suspend () -> Result<Sesion>
     ) {
-        viewModelScope.launch {
+        trabajoAutenticacion = viewModelScope.launch {
             _estado.value = _estado.value.copy(
                 cargando = true,
                 error = null
@@ -119,6 +150,7 @@ class LoginViewModel(
     }
 
     fun cerrarSesion() {
+        trabajoAutenticacion?.cancel()
         repository.cerrarSesion()
         _estado.value = LoginUiState()
     }

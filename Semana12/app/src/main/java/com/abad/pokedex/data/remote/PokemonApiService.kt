@@ -4,6 +4,8 @@ import com.abad.pokedex.data.remote.dto.PokemonDetailDto
 import com.abad.pokedex.data.remote.dto.PokemonTypeResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
+import com.abad.pokedex.data.remote.dto.PokemonListResponse
 
 interface PokemonApiService {
 
@@ -16,4 +18,10 @@ interface PokemonApiService {
     suspend fun obtenerDetalle(
         @Path("nombre") nombre: String
     ): PokemonDetailDto
+
+    @GET("pokemon")
+    suspend fun obtenerListado(
+        @Query("limit") limite: Int = 60,
+        @Query("offset") offset: Int = 0
+    ): PokemonListResponse
 }

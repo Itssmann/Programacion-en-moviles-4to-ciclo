@@ -24,4 +24,6 @@ interface PokemonRepository {
     suspend fun cantidadFavoritos(): Int
 
     suspend fun limpiarCache()
+
+    suspend fun sincronizarCatalogo(): Result<Int>
 }

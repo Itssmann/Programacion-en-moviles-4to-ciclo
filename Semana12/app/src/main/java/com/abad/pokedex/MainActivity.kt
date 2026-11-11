@@ -5,14 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import com.abad.pokedex.data.auth.FirebaseAuthRepository
-import com.abad.pokedex.ui.login.LoginViewModel
-import com.abad.pokedex.ui.login.LoginViewModelFactory
+import com.abad.pokedex.ui.admin.AdminViewModel
+import com.abad.pokedex.ui.admin.AdminViewModelFactory
 import com.abad.pokedex.ui.detalle.DetalleViewModel
 import com.abad.pokedex.ui.detalle.DetalleViewModelFactory
 import com.abad.pokedex.ui.favoritos.FavoritosViewModel
 import com.abad.pokedex.ui.favoritos.FavoritosViewModelFactory
 import com.abad.pokedex.ui.lista.PokemonViewModel
 import com.abad.pokedex.ui.lista.PokemonViewModelFactory
+import com.abad.pokedex.ui.login.LoginViewModel
+import com.abad.pokedex.ui.login.LoginViewModelFactory
 import com.abad.pokedex.ui.navigation.AppNavigation
 import com.abad.pokedex.ui.theme.PokedexAbadTheme
 
@@ -20,6 +22,11 @@ class MainActivity : ComponentActivity() {
 
     private val container by lazy {
         AppContainer(applicationContext)
+    }
+
+    // Una misma instancia para el login y el panel Admin.
+    private val authRepository by lazy {
+        FirebaseAuthRepository()
     }
 
     private val pokemonViewModel: PokemonViewModel by viewModels {
@@ -35,7 +42,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private val loginViewModel: LoginViewModel by viewModels {
-        LoginViewModelFactory(FirebaseAuthRepository())
+        LoginViewModelFactory(authRepository)
+    }
+
+    private val adminViewModel: AdminViewModel by viewModels {
+        AdminViewModelFactory(
+            repository = container.pokemonRepository,
+            authRepository = authRepository
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +61,8 @@ class MainActivity : ComponentActivity() {
                     pokemonViewModel = pokemonViewModel,
                     detalleViewModel = detalleViewModel,
                     favoritosViewModel = favoritosViewModel,
-                    loginViewModel = loginViewModel
+                    loginViewModel = loginViewModel,
+                    adminViewModel = adminViewModel
                 )
             }
         }
