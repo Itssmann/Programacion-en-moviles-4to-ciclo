@@ -45,22 +45,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
         setContent {
             PokedexAbadTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
-                    Box(
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
-                        AppNavigation(
-                            pokemonViewModel = pokemonViewModel,
-                            detalleViewModel = detalleViewModel,
-                            favoritosViewModel = favoritosViewModel
-                        )
-                    }
-                }
+                AppNavigation(
+                    pokemonViewModel = pokemonViewModel,
+                    detalleViewModel = detalleViewModel,
+                    favoritosViewModel = favoritosViewModel
+                )
             }
         }
+
     }
 }
