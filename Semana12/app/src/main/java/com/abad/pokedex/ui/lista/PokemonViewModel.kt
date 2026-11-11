@@ -21,8 +21,19 @@ class PokemonViewModel(
 ) : ViewModel() {
     private val _estado = MutableStateFlow<UiState<List<Pokemon>>>(UiState.Cargando)
     val estado: StateFlow<UiState<List<Pokemon>>> = _estado.asStateFlow()
+
     private val _tipoActual = MutableStateFlow("fire")
     val tipoActual: StateFlow<String> = _tipoActual.asStateFlow()
+
+    private val _tipoSeleccionado = MutableStateFlow("all")
+    val tipoSeleccionado: StateFlow<String> = _tipoSeleccionado.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _ordenSeleccionado = MutableStateFlow("Numero")
+    val ordenSeleccionado: StateFlow<String> = _ordenSeleccionado.asStateFlow()
+
     private val _aviso = MutableStateFlow<String?>(null)
     val aviso: StateFlow<String?> = _aviso.asStateFlow()
     private val _refrescando = MutableStateFlow(false)
@@ -51,14 +62,37 @@ class PokemonViewModel(
         cargar("fire")
     }
 
-    // Seleccionar un tipo ya consultado no repite la descarga (incluidos errores y vacíos).
     fun cargar(tipo: String) {
-        require(tipo in setOf("fire", "water", "grass"))
-        _tipoActual.value = tipo
-        if (tipo !in sincronizaciones) sincronizar(tipo) else publicarEstado()
+        if (tipo != "all") {
+            require(tipo in setOf("fire", "water", "grass"))
+            _tipoActual.value = tipo
+        }
+        _tipoSeleccionado.value = tipo
+        if (tipo != "all" && tipo !in sincronizaciones) {
+            sincronizar(tipo)
+        } else {
+            publicarEstado()
+        }
     }
 
-    fun refrescar() = sincronizar(_tipoActual.value)
+    fun setTipo(tipo: String) {
+        cargar(tipo)
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+        publicarEstado()
+    }
+
+    fun setOrden(orden: String) {
+        _ordenSeleccionado.value = orden
+        publicarEstado()
+    }
+
+    fun refrescar() {
+        val tipo = _tipoActual.value
+        sincronizar(tipo)
+    }
 
     private fun sincronizar(tipo: String) {
         if (sincronizaciones[tipo]?.enCurso == true) return
@@ -73,7 +107,6 @@ class PokemonViewModel(
             } catch (error: Exception) {
                 Result.failure(error)
             }
-            // Leer Room después del refresco evita declarar vacío antes de recibir su emisión.
             try {
                 locales = repository.pokemones.first()
                 errorLocal = null
@@ -91,16 +124,42 @@ class PokemonViewModel(
     }
 
     private fun publicarEstado() {
+        val tipo = _tipoSeleccionado.value
+        val query = _searchQuery.value.trim().lowercase()
+        val orden = _ordenSeleccionado.value
+
+        val listaBase = locales.orEmpty()
+
+        val filtradosPorTipo = if (tipo == "all") {
+            listaBase
+        } else {
+            listaBase.filter { tipo in it.tipos }
+        }
+
+        val filtradosPorBusqueda = if (query.isEmpty()) {
+            filtradosPorTipo
+        } else {
+            filtradosPorTipo.filter { it.nombre.lowercase().contains(query) }
+        }
+
+        val datos = when (orden) {
+            "Nombre" -> filtradosPorBusqueda.sortedBy { it.nombre }
+            else -> filtradosPorBusqueda.sortedBy { pokemon ->
+                val regex = "/pokemon/(\\d+)\\.png".toRegex()
+                regex.find(pokemon.imagenUrl.orEmpty())?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            }
+        }
+
         val sincronizacion = sincronizaciones[_tipoActual.value]
-        val datos = locales.orEmpty().filter { _tipoActual.value in it.tipos }
         val error = sincronizacion?.error
         _aviso.value = if (datos.isNotEmpty() && error != null) {
             "Sin conexión. Mostrando datos guardados"
         } else null
+
         _estado.value = when {
             datos.isNotEmpty() -> UiState.Exito(datos)
             errorLocal != null -> UiState.Error("No se pudieron leer los datos guardados. Reintenta.")
-            locales == null || sincronizacion == null || sincronizacion.enCurso -> UiState.Cargando
+            locales == null || (tipo != "all" && tipo !in sincronizaciones) || (sincronizacion?.enCurso == true && listaBase.isEmpty()) -> UiState.Cargando
             error != null -> UiState.Error(mensajeDe(error))
             else -> UiState.Exito(emptyList())
         }
