@@ -9,14 +9,22 @@ import com.abad.pokedex.data.repository.PokemonRepository
 import com.abad.pokedex.domain.model.Rol
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+enum class OperacionAdmin { SINCRONIZAR, LIMPIAR }
 
 data class AdminUiState(
     val totalPokemones: Int = 0,
     val totalFavoritos: Int = 0,
     val cargando: Boolean = false,
-    val mensaje: String? = null
+    val mensaje: String? = null,
+    val esError: Boolean = false,
+    val datosCargados: Boolean = false,
+    val distribucionTipos: Map<String, Int> = emptyMap(),
+    val operacion: OperacionAdmin? = null
 )
 
 class AdminViewModel(
@@ -30,6 +38,21 @@ class AdminViewModel(
 
     init {
         actualizarTotales()
+        viewModelScope.launch {
+            try {
+                combine(repository.pokemones, repository.favoritos) { catalogo, _ ->
+                    Triple(catalogo.size, repository.cantidadFavoritos(),
+                        catalogo.flatMap { it.tipos.distinct() }.groupingBy { it }.eachCount()
+                            .toList().sortedByDescending { it.second }.toMap())
+                }.collect { (total, favoritos, tipos) ->
+                    _estado.update { it.copy(totalPokemones = total, totalFavoritos = favoritos,
+                        distribucionTipos = tipos, datosCargados = true) }
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                _estado.update { it.copy(mensaje = "No se pudo actualizar el resumen del catálogo.", esError = true) }
+            }
+        }
     }
 
     fun actualizarTotales() {
@@ -37,13 +60,14 @@ class AdminViewModel(
             try {
                 _estado.value = _estado.value.copy(
                     totalPokemones = repository.cantidadGuardada(),
-                    totalFavoritos = repository.cantidadFavoritos()
+                    totalFavoritos = repository.cantidadFavoritos(),
+                    datosCargados = true
                 )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
-                    mensaje = "No se pudieron consultar los datos."
+                    mensaje = "No se pudieron consultar los datos.", esError = true
                 )
             }
         }
@@ -60,13 +84,15 @@ class AdminViewModel(
         viewModelScope.launch {
             _estado.value = _estado.value.copy(
                 cargando = true,
-                mensaje = null
+                mensaje = null,
+                esError = false,
+                operacion = OperacionAdmin.LIMPIAR
             )
 
             try {
                 if (!verificarAdministrador()) {
                     _estado.value = _estado.value.copy(
-                        cargando = false,
+                        cargando = false, operacion = null, esError = true,
                         mensaje = "Acceso denegado: se requiere una cuenta administradora."
                     )
                     return@launch
@@ -74,7 +100,8 @@ class AdminViewModel(
 
                 repository.limpiarCache()
 
-                _estado.value = AdminUiState(
+                _estado.value = _estado.value.copy(
+                    cargando = false, operacion = null, esError = false, datosCargados = true,
                     totalPokemones = repository.cantidadGuardada(),
                     totalFavoritos = repository.cantidadFavoritos(),
                     mensaje = "Caché eliminada. Los favoritos se conservaron."
@@ -83,7 +110,7 @@ class AdminViewModel(
                 throw e
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
-                    cargando = false,
+                    cargando = false, operacion = null, esError = true,
                     mensaje = "No se pudo limpiar la caché."
                 )
             }
@@ -96,13 +123,15 @@ class AdminViewModel(
         viewModelScope.launch {
             _estado.value = _estado.value.copy(
                 cargando = true,
-                mensaje = null
+                mensaje = null,
+                esError = false,
+                operacion = OperacionAdmin.SINCRONIZAR
             )
 
             try {
                 if (!verificarAdministrador()) {
                     _estado.value = _estado.value.copy(
-                        cargando = false,
+                        cargando = false, operacion = null, esError = true,
                         mensaje = "Acceso denegado: se requiere una cuenta administradora."
                     )
                     return@launch
@@ -114,7 +143,8 @@ class AdminViewModel(
                 }
 
                 _estado.value = if (resultado.isSuccess) {
-                    AdminUiState(
+                    _estado.value.copy(
+                        cargando = false, operacion = null, esError = false, datosCargados = true,
                         totalPokemones = repository.cantidadGuardada(),
                         totalFavoritos = repository.cantidadFavoritos(),
                         mensaje = "Sincronización completada: " +
@@ -122,7 +152,7 @@ class AdminViewModel(
                     )
                 } else {
                     _estado.value.copy(
-                        cargando = false,
+                        cargando = false, operacion = null, esError = true,
                         mensaje = "No se pudo sincronizar. Comprueba tu conexión."
                     )
                 }
@@ -130,7 +160,7 @@ class AdminViewModel(
                 throw e
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
-                    cargando = false,
+                    cargando = false, operacion = null, esError = true,
                     mensaje = "Ocurrió un error durante la sincronización."
                 )
             }

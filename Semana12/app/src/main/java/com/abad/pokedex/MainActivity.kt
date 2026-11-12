@@ -20,6 +20,8 @@ import com.abad.pokedex.ui.lista.PokemonViewModel
 import com.abad.pokedex.ui.lista.PokemonViewModelFactory
 import com.abad.pokedex.ui.login.LoginViewModel
 import com.abad.pokedex.ui.login.LoginViewModelFactory
+import com.abad.pokedex.ui.perfil.PerfilViewModel
+import com.abad.pokedex.ui.perfil.PerfilViewModelFactory
 import com.abad.pokedex.ui.navigation.AppNavigation
 import com.abad.pokedex.ui.theme.PokedexAbadTheme
 
@@ -44,6 +46,10 @@ class MainActivity : ComponentActivity() {
 
     private val favoritosViewModel: FavoritosViewModel by viewModels {
         FavoritosViewModelFactory(container.pokemonRepository)
+    }
+
+    private val perfilViewModel: PerfilViewModel by viewModels {
+        PerfilViewModelFactory(container.pokemonRepository)
     }
 
     private val loginViewModel: LoginViewModel by viewModels {
@@ -84,7 +90,8 @@ class MainActivity : ComponentActivity() {
                     detalleViewModel = detalleViewModel,
                     favoritosViewModel = favoritosViewModel,
                     loginViewModel = loginViewModel,
-                    adminViewModel = adminViewModel
+                    adminViewModel = adminViewModel,
+                    perfilViewModel = perfilViewModel
                 )
             }
         }

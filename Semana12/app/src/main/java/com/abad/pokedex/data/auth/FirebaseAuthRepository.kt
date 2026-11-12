@@ -18,7 +18,8 @@ class FirebaseAuthRepository(
             Sesion(
                 uid = usuario.uid,
                 correo = usuario.email.orEmpty(),
-                rol = Rol.USUARIO
+                rol = Rol.USUARIO,
+                nombre = usuario.displayName?.takeIf { it.isNotBlank() }
             )
         }
 
@@ -105,7 +106,9 @@ class FirebaseAuthRepository(
         return Sesion(
             uid = uid,
             correo = email.orEmpty(),
-            rol = rol
+            rol = rol,
+            nombre = displayName?.takeIf { it.isNotBlank() }
+                ?: documento.getString("nombre")?.takeIf { it.isNotBlank() }
         )
     }
 }

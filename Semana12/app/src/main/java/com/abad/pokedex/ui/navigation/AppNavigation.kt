@@ -1,10 +1,16 @@
 package com.abad.pokedex.ui.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.CatchingPokemon
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -13,7 +19,16 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.abad.pokedex.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abad.pokedex.domain.model.Rol
 import com.abad.pokedex.ui.admin.AdminScreen
@@ -29,7 +44,8 @@ import com.abad.pokedex.ui.login.LoginScreen
 import com.abad.pokedex.ui.login.LoginViewModel
 import com.abad.pokedex.ui.login.RegistroScreen
 import com.abad.pokedex.ui.perfil.PerfilScreen
-import com.google.firebase.auth.FirebaseAuth
+import com.abad.pokedex.ui.perfil.PerfilViewModel
+import com.abad.pokedex.ui.perfil.PerfilUiState
 
 @Composable
 fun AppNavigation(
@@ -37,7 +53,8 @@ fun AppNavigation(
     detalleViewModel: DetalleViewModel,
     favoritosViewModel: FavoritosViewModel,
     loginViewModel: LoginViewModel? = null,
-    adminViewModel: AdminViewModel? = null
+    adminViewModel: AdminViewModel? = null,
+    perfilViewModel: PerfilViewModel? = null
 ) {
     var pantalla by rememberSaveable {
         mutableStateOf("inicio")
@@ -63,12 +80,7 @@ fun AppNavigation(
     val esAdmin = sesion?.rol == Rol.ADMIN &&
             adminViewModel != null
 
-    val nombre = if (correo != null) {
-        FirebaseAuth.getInstance()
-            .currentUser?.displayName
-    } else {
-        null
-    }
+    val nombre = sesion?.nombre
 
     LaunchedEffect(autenticado, sesion?.uid) {
         if (!autenticado) {
@@ -247,6 +259,11 @@ fun AppNavigation(
                         },
                         onVerFavoritos = {
                             pantalla = "favoritos"
+                        },
+                        onPokemonClick = { nombrePokemon ->
+                            pokemonSeleccionado = nombrePokemon
+                            pantallaAnterior = "inicio"
+                            pantalla = "detalle"
                         }
                     )
 
@@ -277,6 +294,9 @@ fun AppNavigation(
                     "perfil" -> PerfilScreen(
                         correo = correo,
                         nombre = nombre,
+                        rol = sesion?.rol,
+                        coleccion = perfilViewModel?.estado?.collectAsStateWithLifecycle()?.value ?: PerfilUiState(),
+                        onFavoritos = { pantalla = "favoritos" },
                         onLogin = {
                             pantalla = "login"
                         },
@@ -300,7 +320,12 @@ fun AppNavigation(
                                     adminViewModel.sincronizar()
                                 },
                                 cargando = adminEstado.cargando,
-                                mensaje = adminEstado.mensaje
+                                mensaje = adminEstado.mensaje,
+                                nombre = nombre ?: correo,
+                                distribucionTipos = adminEstado.distribucionTipos,
+                                datosCargados = adminEstado.datosCargados,
+                                esError = adminEstado.esError,
+                                operacion = adminEstado.operacion
                             )
 
                         }
@@ -362,46 +387,97 @@ private fun PantallaBienvenida(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Título principal con ABAD en rojo
         Text(
-            text = "POKÉDEX ABAD",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary
+            text = buildAnnotatedString {
+                append("POKÉDEX ")
+                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    append("ABAD")
+                }
+            },
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = "Tu aventura Pokémon comienza aquí",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Imagen de bienvenida (Bulbasaur, Pikachu, Charmander, Squirtle)
+        Image(
+            painter = painterResource(id = R.drawable.pokemon_bienvenida),
+            contentDescription = "Pokémon de bienvenida",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp),
+            contentScale = ContentScale.Fit
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "¡Bienvenido, entrenador!",
-            style = MaterialTheme.typography.headlineMedium
+            text = "¡Bienvenido, Entrenador!",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Inicia sesión para explorar Pokémon y crear tu propia colección.",
-            style = MaterialTheme.typography.bodyLarge
+            text = "Inicia sesión para explorar Pokémon, guardar tus favoritos y gestionar tu colección.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Button(
             onClick = onLogin,
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp)
         ) {
-            Text("Iniciar sesión")
+            Text(
+                "Iniciar sesión",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedButton(
             onClick = onRegistro,
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp)
         ) {
-            Text("Crear cuenta")
+            Text(
+                "Crear cuenta nueva",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.abad.pokedex.ui.detalle
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,7 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,6 +25,7 @@ import com.abad.pokedex.ui.components.Cargando
 import com.abad.pokedex.ui.components.ErrorView
 import java.util.Locale
 import com.abad.pokedex.ui.components.EtiquetaTipo
+import com.abad.pokedex.ui.components.PokemonImage
 
 private fun colorPorTipo(tipo: String): Color {
     return when (tipo.lowercase()) {
@@ -30,6 +34,13 @@ private fun colorPorTipo(tipo: String): Color {
         "grass" -> Color(0xFF4BA879)
         else -> Color(0xFF5266A0)
     }
+}
+
+private fun obtenerNumeroPokedex(imagenUrl: String?): Int {
+    if (imagenUrl.isNullOrBlank()) return 0
+    val regex = "/pokemon/(\\d+)\\.png".toRegex()
+    val match = regex.find(imagenUrl)
+    return match?.groupValues?.get(1)?.toIntOrNull() ?: 0
 }
 
 private fun nombreEstadistica(nombre: String): String {
@@ -109,104 +120,139 @@ private fun ContenidoDetalle(
     val colorTipo = colorPorTipo(
         pokemon.tipos.firstOrNull().orEmpty()
     )
+    val numeroId = obtenerNumeroPokedex(pokemon.imagenUrl)
+    val numeroFormateado = if (numeroId > 0) "#${numeroId.toString().padStart(3, '0')}" else "#---"
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
-        contentPadding = PaddingValues(bottom = 24.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        contentPadding = PaddingValues(bottom = 28.dp)
     ) {
+        // 1. Imagen Grande Protagonista con Fondo del Tipo
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(colorTipo.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = pokemon.nombre.replaceFirstChar {
-                        it.uppercase()
-                    },
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                PokemonImage(
+                    url = pokemon.imagenUrl,
+                    contentDescription = pokemon.nombre,
+                    modifier = Modifier.size(220.dp),
+                    contentScale = ContentScale.Fit
                 )
-
-                IconButton(onClick = onFavoritoClick) {
-                    Icon(
-                        imageVector = if (pokemon.esFavorito) {
-                            Icons.Default.Favorite
-                        } else {
-                            Icons.Default.FavoriteBorder
-                        },
-                        contentDescription = if (pokemon.esFavorito) {
-                            "Quitar de favoritos"
-                        } else {
-                            "Agregar a favoritos"
-                        },
-                        tint = if (pokemon.esFavorito) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.outline
-                        }
-                    )
-                }
             }
         }
 
+        // 2. Encabezado Moderno (Nombre, Número, Tipos, Favorito)
         item {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                pokemon.tipos.forEach { tipo ->
-                    EtiquetaTipo(tipo)
-                }
-            }
-        }
-
-        item {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        "Información general",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = numeroFormateado,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = colorTipo
+                        )
 
-                    Text(
-                        "Altura: ${
-                            String.format(
-                                Locale.US,
-                                "%.1f",
-                                pokemon.altura / 10.0
-                            )
-                        } m",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                        Text(
+                            text = pokemon.nombre.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
 
-                    Text(
-                        "Peso: ${
-                            String.format(
-                                Locale.US,
-                                "%.1f",
-                                pokemon.peso / 10.0
-                            )
-                        } kg",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    FilledTonalIconButton(
+                        onClick = onFavoritoClick,
+                        modifier = Modifier.size(48.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = if (pokemon.esFavorito) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (pokemon.esFavorito) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (pokemon.esFavorito) "Quitar de favoritos" else "Agregar a favoritos",
+                            tint = if (pokemon.esFavorito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    pokemon.tipos.forEach { tipo ->
+                        EtiquetaTipo(tipo)
+                    }
                 }
             }
         }
 
+        // 3. Información General (Altura y Peso en Tarjetas M3)
+        item {
+            Text(
+                "Información general",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                ElevatedCard(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("Altura", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = String.format(Locale.US, "%.1f m", pokemon.altura / 10.0),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                ElevatedCard(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("Peso", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = String.format(Locale.US, "%.1f kg", pokemon.peso / 10.0),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        // 4. Habilidades
         item {
             Text(
                 "Habilidades",
@@ -219,35 +265,35 @@ private fun ContenidoDetalle(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp),
+                tonalElevation = 1.dp
             ) {
                 Text(
-                    text = habilidad.replace("-", " ")
-                        .replaceFirstChar { it.uppercase() },
-                    modifier = Modifier.padding(14.dp),
-                    style = MaterialTheme.typography.bodyMedium
+                    text = habilidad.replace("-", " ").replaceFirstChar { it.uppercase() },
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
 
+        // 5. Estadísticas
         item {
             Text(
-                "Estadísticas",
+                "Estadísticas base",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        items(pokemon.estadisticas.toList()) { (nombre, valor) ->
+        items(pokemon.estadisticas.toList()) { (nombreStat, valor) ->
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(
-                    modifier = Modifier.padding(14.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
@@ -255,7 +301,7 @@ private fun ContenidoDetalle(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            nombreEstadistica(nombre),
+                            nombreEstadistica(nombreStat),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -269,12 +315,10 @@ private fun ContenidoDetalle(
                     }
 
                     LinearProgressIndicator(
-                        progress = {
-                            (valor / 255f).coerceIn(0f, 1f)
-                        },
+                        progress = { (valor / 255f).coerceIn(0f, 1f) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(8.dp),
+                            .height(10.dp),
                         color = colorTipo,
                         trackColor = colorTipo.copy(alpha = 0.15f),
                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
