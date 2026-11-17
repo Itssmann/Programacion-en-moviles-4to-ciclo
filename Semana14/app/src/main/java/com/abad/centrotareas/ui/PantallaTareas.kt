@@ -60,10 +60,10 @@ fun PantallaTareas(viewModel: TareasViewModel) {
 
                         Button(
                             onClick = {
-                                viewModel.tareaLargaMala()
+                                viewModel.tareaLarga()
                             }
                         ) {
-                            Text("Tarea larga (MAL)")
+                            Text("Tarea larga")
                         }
 
                         Spacer(Modifier.height(8.dp))

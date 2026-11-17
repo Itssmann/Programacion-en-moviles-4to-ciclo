@@ -7,6 +7,12 @@ import com.abad.centrotareas.model.PrimosUi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import android.util.Log
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TareasViewModel(
     private val repo: TareasRepository
@@ -24,8 +30,23 @@ class TareasViewModel(
         _mensaje.value = "Terminó"
     }
 
+    fun tareaLarga() {
+        viewModelScope.launch {
+            _mensaje.value = "Trabajando..."
 
-    // TODO Paso 1: tareaLargaMala()
+            Log.d("HILO", "Antes: ${Thread.currentThread().name}")
+
+            withContext(Dispatchers.Default) {
+                Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
+                delay(4000)
+            }
+
+            Log.d("HILO", "Despues: ${Thread.currentThread().name}")
+
+            _mensaje.value = "Terminó"
+        }
+    }
+
     // TODO Paso 2: tareaLarga()
     // TODO Paso 3: progreso
     // TODO Paso 4: trabajo, corriendo y cancelar()
