@@ -1,24 +1,36 @@
 package com.abad.centrotareas.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.abad.centrotareas.viewmodel.TareasViewModel
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
-import com.abad.centrotareas.model.PrimosUi
-import com.abad.centrotareas.model.CargaUi
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import com.abad.centrotareas.model.CargaUi
+import com.abad.centrotareas.model.PrimosUi
+import com.abad.centrotareas.ui.theme.ColorBorde
+import com.abad.centrotareas.ui.theme.ColorTarjeta
+import com.abad.centrotareas.ui.theme.FondoGeneral
+import com.abad.centrotareas.ui.theme.RojoErrorFondo
+import com.abad.centrotareas.ui.theme.RojoErrorTexto
+import com.abad.centrotareas.ui.theme.VerdeExitoFondo
+import com.abad.centrotareas.ui.theme.VerdeExitoTexto
+import com.abad.centrotareas.ui.theme.VerdePetroleo
+import com.abad.centrotareas.ui.theme.VerdeSecundario
+import com.abad.centrotareas.viewmodel.TareasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,9 +49,19 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("CentroTareas") }
+                title = {
+                    Text(
+                        "CentroTareas",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = VerdePetroleo
+                )
             )
-        }
+        },
+        containerColor = FondoGeneral
     ) { padding ->
 
         LazyColumn(
@@ -50,70 +72,114 @@ fun PantallaTareas(viewModel: TareasViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
+            // 1. Tarea con progreso
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = ColorTarjeta),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ColorBorde)
+                ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             "Tarea con progreso",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = VerdePetroleo,
+                            modifier = Modifier.align(Alignment.Start)
                         )
 
                         Spacer(Modifier.height(12.dp))
 
-                        Button(
-                            onClick = {
-                                viewModel.tareaLarga()
-                            },
-                            enabled = !corriendo
-                        ) {
-                            Text("Iniciar")
-                        }
-
+                        // Botón «Tócame: X» centrado y en la parte superior
                         OutlinedButton(
                             onClick = {
-                                viewModel.cancelar()
+                                contador.intValue++
                             },
-                            enabled = corriendo
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = VerdePetroleo),
+                            border = BorderStroke(1.dp, ColorBorde)
                         ) {
-                            Text("Cancelar")
+                            Text("Tócame: ${contador.intValue}")
                         }
 
+                        Spacer(Modifier.height(12.dp))
+
+                        // Botones Iniciar y Cancelar debajo
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(
+                                onClick = {
+                                    viewModel.tareaLarga()
+                                },
+                                enabled = !corriendo,
+                                colors = ButtonDefaults.buttonColors(containerColor = VerdePetroleo)
+                            ) {
+                                Text("Iniciar")
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.cancelar()
+                                },
+                                enabled = corriendo,
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = VerdePetroleo),
+                                border = BorderStroke(1.dp, ColorBorde)
+                            ) {
+                                Text("Cancelar")
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Text(
+                            "Estado: $mensaje",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.align(Alignment.Start)
+                        )
 
                         Spacer(Modifier.height(8.dp))
 
-                        Text("Estado: $mensaje")
-
-                        Spacer(Modifier.height(12.dp))
-
-                        LinearProgressIndicator(
-                            progress = progreso,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Text("${(progreso * 100).toInt()} %")
-
-                        Spacer(Modifier.height(12.dp))
+                        ) {
+                            LinearProgressIndicator(
+                                progress = { progreso },
+                                modifier = Modifier.weight(1f),
+                                color = VerdeSecundario
+                            )
+                            Text(
+                                "${(progreso * 100).toInt()}%",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
 
+            // 2. Contar números primos
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = ColorTarjeta),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ColorBorde)
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
                             "Contar números primos",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = VerdePetroleo
                         )
-
-                        Spacer(Modifier.height(12.dp))
-
-                        Text("Calcula la cantidad de números primos hasta N.")
 
                         Spacer(Modifier.height(12.dp))
 
@@ -127,7 +193,8 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                 keyboardType = KeyboardType.Number
                             ),
                             enabled = !calculando,
-                            singleLine = true
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(Modifier.height(12.dp))
@@ -140,7 +207,8 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                     }
                                 },
                                 enabled = !calculando &&
-                                        (limitePrimos.toIntOrNull() ?: 0) >= 2
+                                        (limitePrimos.toIntOrNull() ?: 0) >= 2,
+                                colors = ButtonDefaults.buttonColors(containerColor = VerdePetroleo)
                             ) {
                                 Text("Contar")
                             }
@@ -149,7 +217,9 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                 onClick = {
                                     viewModel.cancelarPrimos()
                                 },
-                                enabled = calculando
+                                enabled = calculando,
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = VerdePetroleo),
+                                border = BorderStroke(1.dp, ColorBorde)
                             ) {
                                 Text("Cancelar")
                             }
@@ -158,50 +228,89 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         Spacer(Modifier.height(12.dp))
 
                         when (val estado = primos) {
-                            PrimosUi.Inicial -> Text("Resultado pendiente")
+                            PrimosUi.Inicial -> Text(
+                                "Resultado pendiente",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
 
                             PrimosUi.Calculando -> {
-                                CircularProgressIndicator()
-                                Text("Calculando números primos...")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = VerdeSecundario,
+                                        strokeWidth = 2.5.dp
+                                    )
+                                    Text(
+                                        "Calculando números primos...",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                             }
 
                             is PrimosUi.Listo -> {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFFE8F5E9)
-                                    )
+                                Surface(
+                                    color = VerdeExitoFondo,
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, Color(0xFFA5D6A7)),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(Modifier.padding(12.dp)) {
-                                        Text("Resultado: ${estado.cantidad} primos")
-                                        Text("Tiempo: ${estado.milisegundos} ms")
+                                        Text(
+                                            "Resultado: ${estado.cantidad} primos",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = VerdeExitoTexto
+                                        )
+                                        Text(
+                                            "Tiempo: ${estado.milisegundos} ms",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = VerdeExitoTexto
+                                        )
                                     }
                                 }
                             }
 
                             PrimosUi.Cancelado -> {
-                                Text("Cálculo cancelado")
+                                Surface(
+                                    color = Color(0xFFFFF3E0),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, Color(0xFFFFCC80)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        "Cálculo cancelado",
+                                        modifier = Modifier.padding(12.dp),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFE65100),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
+            // 3. Dos cargas
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = ColorTarjeta),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ColorBorde)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
                             "Dos cargas",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = VerdePetroleo
                         )
-
-                        Spacer(Modifier.height(12.dp))
-
-                        Text("Compara las cargas secuenciales y paralelas.")
 
                         Spacer(Modifier.height(12.dp))
 
@@ -210,13 +319,21 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Simular error")
+                            Text(
+                                "Simular error",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
 
                             Switch(
                                 checked = simularError,
                                 onCheckedChange = {
                                     viewModel.cambiarSimularError(it)
-                                }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = VerdeSecundario
+                                )
                             )
                         }
 
@@ -227,58 +344,102 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         ) {
                             Button(
                                 onClick = { viewModel.cargarUnaPorUna() },
-                                enabled = carga != CargaUi.Cargando
+                                enabled = carga != CargaUi.Cargando,
+                                colors = ButtonDefaults.buttonColors(containerColor = VerdePetroleo)
                             ) {
                                 Text("Una por una")
                             }
 
                             OutlinedButton(
                                 onClick = { viewModel.cargarALaVez() },
-                                enabled = carga != CargaUi.Cargando
+                                enabled = carga != CargaUi.Cargando,
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = VerdePetroleo),
+                                border = BorderStroke(1.dp, ColorBorde)
                             ) {
                                 Text("A la vez")
                             }
                         }
+
                         Spacer(Modifier.height(12.dp))
 
                         when (val estado = carga) {
                             CargaUi.Inicial -> {
-                                Text("Resultados pendientes")
+                                Text(
+                                    "Resultados pendientes",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
                             }
 
                             CargaUi.Cargando -> {
-                                CircularProgressIndicator()
-                                Text("Cargando datos...")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = VerdeSecundario,
+                                        strokeWidth = 2.5.dp
+                                    )
+                                    Text(
+                                        "Cargando datos...",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                             }
 
                             is CargaUi.Exito -> {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                                    )
+                                Surface(
+                                    color = VerdeExitoFondo,
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, Color(0xFFA5D6A7)),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(12.dp)
                                     ) {
-                                        Text("Modo: ${estado.modo}")
-                                        Text("Perfil: ${estado.perfil}")
-                                        Text("Pedidos: ${estado.pedidos}")
-                                        Text("Tiempo: ${estado.milisegundos} ms")
+                                        Text(
+                                            "Modo: ${estado.modo}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = VerdeExitoTexto
+                                        )
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            "Perfil: ${estado.perfil}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = VerdeExitoTexto
+                                        )
+                                        Text(
+                                            "Pedidos: ${estado.pedidos}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = VerdeExitoTexto
+                                        )
+                                        Text(
+                                            "Tiempo: ${estado.milisegundos} ms",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = VerdeExitoTexto,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
                                 }
                             }
+
                             is CargaUi.Error -> {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer
-                                    )
+                                Surface(
+                                    color = RojoErrorFondo,
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, Color(0xFFEF9A9A)),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(12.dp)
                                     ) {
                                         Text(
                                             estado.mensaje,
-                                            color = MaterialTheme.colorScheme.onErrorContainer
+                                            color = RojoErrorTexto,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
                                         )
 
                                         Spacer(Modifier.height(8.dp))
@@ -286,9 +447,10 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                         Button(
                                             onClick = {
                                                 viewModel.cargarALaVez()
-                                            }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = RojoErrorTexto)
                                         ) {
-                                            Text("Reintentar")
+                                            Text("Reintentar", color = Color.White)
                                         }
                                     }
                                 }
