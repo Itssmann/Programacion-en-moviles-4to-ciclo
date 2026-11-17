@@ -11,6 +11,12 @@ import androidx.compose.ui.unit.dp
 import com.abad.centrotareas.viewmodel.TareasViewModel
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import com.abad.centrotareas.model.PrimosUi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,6 +25,9 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val mensaje by viewModel.mensaje.collectAsState()
     val progreso by viewModel.progreso.collectAsState()
     val corriendo by viewModel.corriendo.collectAsState()
+    val primos by viewModel.primos.collectAsState()
+    var limitePrimos by remember { mutableStateOf("1000") }
+    val calculando = primos is PrimosUi.Calculando
     val contador = remember { mutableIntStateOf(0) }
 
     Scaffold(
@@ -105,22 +114,70 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         Spacer(Modifier.height(12.dp))
 
                         OutlinedTextField(
-                            value = "1000",
-                            onValueChange = {},
-                            enabled = false,
-                            label = { Text("Número límite") }
+                            value = limitePrimos,
+                            onValueChange = {
+                                limitePrimos = it.filter { c -> c.isDigit() }
+                            },
+                            label = { Text("Número límite") },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            enabled = !calculando,
+                            singleLine = true
                         )
 
                         Spacer(Modifier.height(12.dp))
 
-                        Button(
-                            onClick = {},
-                            enabled = false
-                        ) {
-                            Text("Contar")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = {
+                                    limitePrimos.toIntOrNull()?.let {
+                                        viewModel.contar(it)
+                                    }
+                                },
+                                enabled = !calculando &&
+                                        (limitePrimos.toIntOrNull() ?: 0) >= 2
+                            ) {
+                                Text("Contar")
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.cancelarPrimos()
+                                },
+                                enabled = calculando
+                            ) {
+                                Text("Cancelar")
+                            }
                         }
 
-                        Text("Resultado pendiente")
+                        Spacer(Modifier.height(12.dp))
+
+                        when (val estado = primos) {
+                            PrimosUi.Inicial -> Text("Resultado pendiente")
+
+                            PrimosUi.Calculando -> {
+                                CircularProgressIndicator()
+                                Text("Calculando números primos...")
+                            }
+
+                            is PrimosUi.Listo -> {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFE8F5E9)
+                                    )
+                                ) {
+                                    Column(Modifier.padding(12.dp)) {
+                                        Text("Resultado: ${estado.cantidad} primos")
+                                        Text("Tiempo: ${estado.milisegundos} ms")
+                                    }
+                                }
+                            }
+
+                            PrimosUi.Cancelado -> {
+                                Text("Cálculo cancelado")
+                            }
+                        }
                     }
                 }
             }
