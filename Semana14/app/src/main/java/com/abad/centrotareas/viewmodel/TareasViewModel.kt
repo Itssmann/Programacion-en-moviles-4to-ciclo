@@ -22,12 +22,32 @@ class TareasViewModel(
     private val _mensaje = MutableStateFlow("Listo")
     val mensaje: StateFlow<String> = _mensaje.asStateFlow()
 
+    private val _progreso = MutableStateFlow(0f)
+    val progreso: StateFlow<Float> = _progreso.asStateFlow()
+
     fun tareaLargaMala() {
         _mensaje.value = "Trabajando..."
 
         Thread.sleep(4000)
 
         _mensaje.value = "Terminó"
+    }
+
+    fun iniciarProgreso() {
+        viewModelScope.launch {
+            _progreso.value = 0f
+            _mensaje.value = "Trabajando..."
+
+            for (i in 1..100) {
+                withContext(Dispatchers.Default) {
+                    delay(40)
+                }
+
+                _progreso.value = i / 100f
+            }
+
+            _mensaje.value = "Terminó"
+        }
     }
 
     fun tareaLarga() {

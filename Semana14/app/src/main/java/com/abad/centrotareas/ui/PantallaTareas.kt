@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 fun PantallaTareas(viewModel: TareasViewModel) {
 
     val mensaje by viewModel.mensaje.collectAsState()
+    val progreso by viewModel.progreso.collectAsState()
     val contador = remember { mutableIntStateOf(0) }
 
     Scaffold(
@@ -60,10 +61,10 @@ fun PantallaTareas(viewModel: TareasViewModel) {
 
                         Button(
                             onClick = {
-                                viewModel.tareaLarga()
+                                viewModel.iniciarProgreso()
                             }
                         ) {
-                            Text("Tarea larga")
+                            Text("Iniciar")
                         }
 
                         Spacer(Modifier.height(8.dp))
@@ -73,11 +74,11 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         Spacer(Modifier.height(12.dp))
 
                         LinearProgressIndicator(
-                            progress = { 0f },
+                            progress = progreso,
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        Text("0 %")
+                        Text("${(progreso * 100).toInt()} %")
 
                         Spacer(Modifier.height(12.dp))
                     }
