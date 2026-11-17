@@ -9,12 +9,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.abad.centrotareas.viewmodel.TareasViewModel
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaTareas(viewModel: TareasViewModel) {
 
     val mensaje by viewModel.mensaje.collectAsState()
+    val contador = remember { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -45,7 +48,26 @@ fun PantallaTareas(viewModel: TareasViewModel) {
 
                         Spacer(Modifier.height(12.dp))
 
-                        Text("Contador de toques: 0")
+                        Button(
+                            onClick = {
+                                contador.intValue++
+                            }
+                        ) {
+                            Text("Tócame: ${contador.intValue}")
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                viewModel.tareaLargaMala()
+                            }
+                        ) {
+                            Text("Tarea larga (MAL)")
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
                         Text("Estado: $mensaje")
 
                         Spacer(Modifier.height(12.dp))
@@ -58,13 +80,6 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         Text("0 %")
 
                         Spacer(Modifier.height(12.dp))
-
-                        Button(
-                            onClick = {},
-                            enabled = false
-                        ) {
-                            Text("Iniciar")
-                        }
                     }
                 }
             }

@@ -16,6 +16,15 @@ class TareasViewModel(
     private val _mensaje = MutableStateFlow("Listo")
     val mensaje: StateFlow<String> = _mensaje.asStateFlow()
 
+    fun tareaLargaMala() {
+        _mensaje.value = "Trabajando..."
+
+        Thread.sleep(4000)
+
+        _mensaje.value = "Terminó"
+    }
+
+
     // TODO Paso 1: tareaLargaMala()
     // TODO Paso 2: tareaLarga()
     // TODO Paso 3: progreso
