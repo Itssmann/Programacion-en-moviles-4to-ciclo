@@ -1,7 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+val properties = Properties()
+val localProperties = rootProject.file("local.properties")
+
+if (localProperties.exists()) {
+    localProperties.inputStream().use {
+        properties.load(it)
+    }
+}
+val mapsApiKey = properties.getProperty("MAPS_API_KEY", "")
 
 android {
     namespace = "com.abad.campusgps"
@@ -16,7 +28,10 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner =
+            "androidx.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
