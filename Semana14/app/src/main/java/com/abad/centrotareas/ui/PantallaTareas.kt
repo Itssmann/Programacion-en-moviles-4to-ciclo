@@ -18,6 +18,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
 
     val mensaje by viewModel.mensaje.collectAsState()
     val progreso by viewModel.progreso.collectAsState()
+    val corriendo by viewModel.corriendo.collectAsState()
     val contador = remember { mutableIntStateOf(0) }
 
     Scaffold(
@@ -51,21 +52,22 @@ fun PantallaTareas(viewModel: TareasViewModel) {
 
                         Button(
                             onClick = {
-                                contador.intValue++
-                            }
-                        ) {
-                            Text("Tócame: ${contador.intValue}")
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Button(
-                            onClick = {
-                                viewModel.iniciarProgreso()
-                            }
+                                viewModel.tareaLarga()
+                            },
+                            enabled = !corriendo
                         ) {
                             Text("Iniciar")
                         }
+
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.cancelar()
+                            },
+                            enabled = corriendo
+                        ) {
+                            Text("Cancelar")
+                        }
+
 
                         Spacer(Modifier.height(8.dp))
 

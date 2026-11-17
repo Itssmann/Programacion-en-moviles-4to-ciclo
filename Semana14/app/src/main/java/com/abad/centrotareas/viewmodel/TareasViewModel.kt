@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Job
 
 class TareasViewModel(
     private val repo: TareasRepository
@@ -25,6 +26,11 @@ class TareasViewModel(
     private val _progreso = MutableStateFlow(0f)
     val progreso: StateFlow<Float> = _progreso.asStateFlow()
 
+    private var trabajo: Job? = null
+
+    private val _corriendo = MutableStateFlow(false)
+    val corriendo: StateFlow<Boolean> = _corriendo.asStateFlow()
+
     fun tareaLargaMala() {
         _mensaje.value = "Trabajando..."
 
@@ -33,38 +39,32 @@ class TareasViewModel(
         _mensaje.value = "Terminó"
     }
 
-    fun iniciarProgreso() {
-        viewModelScope.launch {
+
+    fun tareaLarga() {
+        if (_corriendo.value) return
+
+        trabajo = viewModelScope.launch {
+            _corriendo.value = true
             _progreso.value = 0f
             _mensaje.value = "Trabajando..."
 
-            for (i in 1..100) {
-                withContext(Dispatchers.Default) {
+            try {
+                for (i in 1..100) {
                     delay(40)
+                    _progreso.value = i / 100f
                 }
 
-                _progreso.value = i / 100f
-            }
+                _mensaje.value = "Terminó"
 
-            _mensaje.value = "Terminó"
+            } finally {
+                _corriendo.value = false
+            }
         }
     }
 
-    fun tareaLarga() {
-        viewModelScope.launch {
-            _mensaje.value = "Trabajando..."
-
-            Log.d("HILO", "Antes: ${Thread.currentThread().name}")
-
-            withContext(Dispatchers.Default) {
-                Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
-                delay(4000)
-            }
-
-            Log.d("HILO", "Despues: ${Thread.currentThread().name}")
-
-            _mensaje.value = "Terminó"
-        }
+    fun cancelar() {
+        trabajo?.cancel()
+        _mensaje.value = "Cancelado"
     }
 
     // TODO Paso 2: tareaLarga()
