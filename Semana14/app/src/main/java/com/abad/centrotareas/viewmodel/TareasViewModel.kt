@@ -111,59 +111,68 @@ class TareasViewModel(
     val carga: StateFlow<CargaUi> =
         _carga.asStateFlow()
 
+    private val _simularError = MutableStateFlow(false)
+
+    val simularError: StateFlow<Boolean> =
+        _simularError.asStateFlow()
+
+    fun cambiarSimularError(valor: Boolean) {
+        _simularError.value = valor
+    }
+
+
     fun cargarUnaPorUna() {
-        if (_carga.value == CargaUi.Cargando) return
-
-        viewModelScope.launch {
-            _carga.value = CargaUi.Cargando
-
-            val inicio = System.currentTimeMillis()
-
-            val perfil = repo.cargarPerfil()
-            val pedidos = repo.cargarPedidos(false)
-
-            val tiempo = System.currentTimeMillis() - inicio
-
-            _carga.value = CargaUi.Exito(
-                modo = "Una por una",
-                perfil = perfil,
-                pedidos = pedidos.size,
-                milisegundos = tiempo
-            )
-        }
+        ejecutarCarga(paralela = false)
     }
 
     fun cargarALaVez() {
+        ejecutarCarga(paralela = true)
+    }
+    private fun ejecutarCarga(paralela: Boolean) {
         if (_carga.value == CargaUi.Cargando) return
 
         viewModelScope.launch {
             _carga.value = CargaUi.Cargando
-
             val inicio = System.currentTimeMillis()
 
-            val (perfil, pedidos) = coroutineScope {
-                val perfilAsync = async {
-                    repo.cargarPerfil()
-                }
+            try {
+                val (perfil, pedidos) = if (paralela) {
+                    coroutineScope {
+                        val perfilAsync = async {
+                            repo.cargarPerfil()
+                        }
 
-                val pedidosAsync = async {
-                    repo.cargarPedidos(false)
-                }
+                        val pedidosAsync = async {
+                            repo.cargarPedidos(_simularError.value)
+                        }
 
-                Pair(
-                    perfilAsync.await(),
-                    pedidosAsync.await()
+                        Pair(
+                            perfilAsync.await(),
+                            pedidosAsync.await()
+                        )
+                    }
+                } else {
+                    val perfil = repo.cargarPerfil()
+                    val pedidos = repo.cargarPedidos(_simularError.value)
+
+                    Pair(perfil, pedidos)
+                }
+                val tiempo = System.currentTimeMillis() - inicio
+
+                _carga.value = CargaUi.Exito(
+                    modo = if (paralela) "A la vez" else "Una por una",
+                    perfil = perfil,
+                    pedidos = pedidos.size,
+                    milisegundos = tiempo
+                )
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                _carga.value = CargaUi.Error(
+                    "No se pudo cargar: ${e.message ?: "Error desconocido"}"
                 )
             }
-
-            val tiempo = System.currentTimeMillis() - inicio
-
-            _carga.value = CargaUi.Exito(
-                modo = "A la vez",
-                perfil = perfil,
-                pedidos = pedidos.size,
-                milisegundos = tiempo
-            )
         }
     }
 }

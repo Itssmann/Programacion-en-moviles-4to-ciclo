@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.abad.centrotareas.model.PrimosUi
 import com.abad.centrotareas.model.CargaUi
+import androidx.compose.ui.Alignment
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +29,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val corriendo by viewModel.corriendo.collectAsState()
     val primos by viewModel.primos.collectAsState()
     val carga by viewModel.carga.collectAsState()
+    val simularError by viewModel.simularError.collectAsState()
     var limitePrimos by remember { mutableStateOf("1000") }
     val calculando = primos is PrimosUi.Calculando
     val contador = remember { mutableIntStateOf(0) }
@@ -204,6 +206,23 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         Spacer(Modifier.height(12.dp))
 
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Simular error")
+
+                            Switch(
+                                checked = simularError,
+                                onCheckedChange = {
+                                    viewModel.cambiarSimularError(it)
+                                }
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Button(
@@ -249,7 +268,30 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                 }
                             }
                             is CargaUi.Error -> {
-                                Text(estado.mensaje)
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(12.dp)
+                                    ) {
+                                        Text(
+                                            estado.mensaje,
+                                            color = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+
+                                        Spacer(Modifier.height(8.dp))
+
+                                        Button(
+                                            onClick = {
+                                                viewModel.cargarALaVez()
+                                            }
+                                        ) {
+                                            Text("Reintentar")
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
