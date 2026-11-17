@@ -12,6 +12,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class TareasViewModel(
     private val repo: TareasRepository
@@ -109,6 +111,59 @@ class TareasViewModel(
     val carga: StateFlow<CargaUi> =
         _carga.asStateFlow()
 
-    // TODO Paso 6: cargarUnaPorUna() y cargarALaVez()
-    // TODO Paso 7: simularError y manejo de errores
+    fun cargarUnaPorUna() {
+        if (_carga.value == CargaUi.Cargando) return
+
+        viewModelScope.launch {
+            _carga.value = CargaUi.Cargando
+
+            val inicio = System.currentTimeMillis()
+
+            val perfil = repo.cargarPerfil()
+            val pedidos = repo.cargarPedidos(false)
+
+            val tiempo = System.currentTimeMillis() - inicio
+
+            _carga.value = CargaUi.Exito(
+                modo = "Una por una",
+                perfil = perfil,
+                pedidos = pedidos.size,
+                milisegundos = tiempo
+            )
+        }
+    }
+
+    fun cargarALaVez() {
+        if (_carga.value == CargaUi.Cargando) return
+
+        viewModelScope.launch {
+            _carga.value = CargaUi.Cargando
+
+            val inicio = System.currentTimeMillis()
+
+            val (perfil, pedidos) = coroutineScope {
+                val perfilAsync = async {
+                    repo.cargarPerfil()
+                }
+
+                val pedidosAsync = async {
+                    repo.cargarPedidos(false)
+                }
+
+                Pair(
+                    perfilAsync.await(),
+                    pedidosAsync.await()
+                )
+            }
+
+            val tiempo = System.currentTimeMillis() - inicio
+
+            _carga.value = CargaUi.Exito(
+                modo = "A la vez",
+                perfil = perfil,
+                pedidos = pedidos.size,
+                milisegundos = tiempo
+            )
+        }
+    }
 }

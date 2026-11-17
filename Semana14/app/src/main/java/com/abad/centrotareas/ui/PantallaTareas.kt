@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.abad.centrotareas.model.PrimosUi
+import com.abad.centrotareas.model.CargaUi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +27,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val progreso by viewModel.progreso.collectAsState()
     val corriendo by viewModel.corriendo.collectAsState()
     val primos by viewModel.primos.collectAsState()
+    val carga by viewModel.carga.collectAsState()
     var limitePrimos by remember { mutableStateOf("1000") }
     val calculando = primos is PrimosUi.Calculando
     val contador = remember { mutableIntStateOf(0) }
@@ -183,7 +185,9 @@ fun PantallaTareas(viewModel: TareasViewModel) {
             }
 
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
@@ -199,24 +203,59 @@ fun PantallaTareas(viewModel: TareasViewModel) {
 
                         Spacer(Modifier.height(12.dp))
 
-                        Button(
-                            onClick = {},
-                            enabled = false
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Una por una")
-                        }
+                            Button(
+                                onClick = { viewModel.cargarUnaPorUna() },
+                                enabled = carga != CargaUi.Cargando
+                            ) {
+                                Text("Una por una")
+                            }
 
-                        OutlinedButton(
-                            onClick = {},
-                            enabled = false
-                        ) {
-                            Text("A la vez")
+                            OutlinedButton(
+                                onClick = { viewModel.cargarALaVez() },
+                                enabled = carga != CargaUi.Cargando
+                            ) {
+                                Text("A la vez")
+                            }
                         }
+                        Spacer(Modifier.height(12.dp))
 
-                        Text("Resultados pendientes")
+                        when (val estado = carga) {
+                            CargaUi.Inicial -> {
+                                Text("Resultados pendientes")
+                            }
+
+                            CargaUi.Cargando -> {
+                                CircularProgressIndicator()
+                                Text("Cargando datos...")
+                            }
+
+                            is CargaUi.Exito -> {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(12.dp)
+                                    ) {
+                                        Text("Modo: ${estado.modo}")
+                                        Text("Perfil: ${estado.perfil}")
+                                        Text("Pedidos: ${estado.pedidos}")
+                                        Text("Tiempo: ${estado.milisegundos} ms")
+                                    }
+                                }
+                            }
+                            is CargaUi.Error -> {
+                                Text(estado.mensaje)
+                            }
+                        }
                     }
                 }
             }
+
         }
     }
 }
