@@ -234,19 +234,37 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                 color = Color.Gray
                             )
 
-                            PrimosUi.Calculando -> {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            is PrimosUi.Calculando -> {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = VerdeSecundario,
-                                        strokeWidth = 2.5.dp
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            color = VerdeSecundario,
+                                            strokeWidth = 2.5.dp
+                                        )
+                                        Text(
+                                            "Calculando: ${estado.procesados} / ${estado.limite} (${(estado.progreso * 100).toInt()}%)",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+
+                                    LinearProgressIndicator(
+                                        progress = { estado.progreso },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        color = VerdeSecundario
                                     )
+
                                     Text(
-                                        "Calculando números primos...",
-                                        style = MaterialTheme.typography.bodyMedium
+                                        "Primos encontrados: ${estado.cantidad}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = VerdePetroleo,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }

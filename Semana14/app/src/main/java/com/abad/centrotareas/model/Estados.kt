@@ -2,7 +2,12 @@ package com.abad.centrotareas.model
 
 sealed interface PrimosUi {
     data object Inicial : PrimosUi
-    data object Calculando : PrimosUi
+    data class Calculando(
+        val procesados: Int = 0,
+        val limite: Int = 0,
+        val cantidad: Int = 0,
+        val progreso: Float = 0f
+    ) : PrimosUi
     data class Listo(
         val cantidad: Int,
         val milisegundos: Long

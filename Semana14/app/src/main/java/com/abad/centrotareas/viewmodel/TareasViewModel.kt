@@ -80,17 +80,26 @@ class TareasViewModel(
         if (primosJob?.isActive == true) return
 
         primosJob = viewModelScope.launch {
-            _primos.value = PrimosUi.Calculando
+            _primos.value = PrimosUi.Calculando(procesados = 0, limite = hasta, cantidad = 0, progreso = 0f)
 
             val inicio = System.currentTimeMillis()
+            var ultimaCantidad = 0
 
             try {
-                val cantidad = repo.contarPrimos(hasta)
+                repo.contarPrimosFlow(hasta).collect { progress ->
+                    ultimaCantidad = progress.cantidadPrimos
+                    _primos.value = PrimosUi.Calculando(
+                        procesados = progress.procesados,
+                        limite = progress.limite,
+                        cantidad = progress.cantidadPrimos,
+                        progreso = progress.porcentaje
+                    )
+                }
 
                 val tiempo = System.currentTimeMillis() - inicio
 
                 _primos.value = PrimosUi.Listo(
-                    cantidad = cantidad,
+                    cantidad = ultimaCantidad,
                     milisegundos = tiempo
                 )
 

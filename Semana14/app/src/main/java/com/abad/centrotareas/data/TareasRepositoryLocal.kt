@@ -5,6 +5,9 @@ import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 class TareasRepositoryLocal : TareasRepository {
@@ -44,6 +47,37 @@ class TareasRepositoryLocal : TareasRepository {
             }
             cantidad
         }
+
+    override fun contarPrimosFlow(hasta: Int): Flow<PrimosProgress> = flow {
+        var cantidad = 0
+        val total = (hasta - 1).coerceAtLeast(1)
+        var ultimoPorcentajeEmitido = -1
+
+        for (n in 2..hasta) {
+            currentCoroutineContext().ensureActive()
+
+            if (esPrimo(n)) {
+                cantidad++
+            }
+
+            val procesados = n - 1
+            val porcentajeInt = (procesados * 100) / total
+
+            // Evita emisiones excesivas: emite solo cuando el porcentaje cambia o al final
+            if (porcentajeInt != ultimoPorcentajeEmitido || n == hasta || n == 2) {
+                ultimoPorcentajeEmitido = porcentajeInt
+                emit(
+                    PrimosProgress(
+                        procesados = procesados,
+                        limite = hasta,
+                        cantidadPrimos = cantidad,
+                        porcentaje = procesados.toFloat() / total
+                    )
+                )
+            }
+        }
+    }.flowOn(Dispatchers.Default)
+
     private fun esPrimo(n: Int): Boolean {
         if (n < 2) return false
 
