@@ -6,12 +6,14 @@ import com.abad.centrotareas.data.PrimosProgress
 import com.abad.centrotareas.data.TareasRepository
 import com.abad.centrotareas.data.UserPreferencesRepository
 import com.abad.centrotareas.model.CargaUi
+import com.abad.centrotareas.model.EstadoRegistro
 import com.abad.centrotareas.model.FiltroHistorial
 import com.abad.centrotareas.model.HistorialItem
 import com.abad.centrotareas.model.PrimosUi
 import com.abad.centrotareas.model.TipoOperacion
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -63,8 +66,9 @@ class TareasViewModel(
     val historialFiltrado: StateFlow<List<HistorialItem>> = combine(historial, _filtroHistorial) { lista, filtro ->
         when (filtro) {
             FiltroHistorial.TODOS -> lista
+            FiltroHistorial.TAREAS -> lista.filter { it.tipo == TipoOperacion.TAREA_PROGRESO }
             FiltroHistorial.PRIMOS -> lista.filter { it.tipo == TipoOperacion.PRIMOS }
-            FiltroHistorial.CARGAS -> lista.filter { it.tipo != TipoOperacion.PRIMOS }
+            FiltroHistorial.CARGAS -> lista.filter { it.tipo == TipoOperacion.CARGA_SECUENCIAL || it.tipo == TipoOperacion.CARGA_PARALELA }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -110,6 +114,7 @@ class TareasViewModel(
             _corriendo.value = true
             _progreso.value = 0f
             _mensaje.value = "Trabajando..."
+            val inicio = System.currentTimeMillis()
 
             try {
                 for (i in 1..100) {
@@ -117,9 +122,43 @@ class TareasViewModel(
                     _progreso.value = i / 100f
                 }
 
+                val tiempoTotal = System.currentTimeMillis() - inicio
                 _mensaje.value = "Terminó"
+
+                // Guardar en historial DataStore
+                val nuevoItem = HistorialItem(
+                    id = UUID.randomUUID().toString(),
+                    tipo = TipoOperacion.TAREA_PROGRESO,
+                    titulo = "Tarea con progreso (100%)",
+                    detalle = "Completada exitosamente",
+                    milisegundos = tiempoTotal,
+                    fechaHora = obtenerFechaHoraActual(),
+                    esError = false
+                )
+                preferencesRepo.agregarHistorial(nuevoItem)
+
                 emitirEventoUi("Tarea de progreso completada")
 
+            } catch (e: CancellationException) {
+                val tiempoTotal = System.currentTimeMillis() - inicio
+                val pct = (_progreso.value * 100).toInt()
+
+                val itemCancelado = HistorialItem(
+                    id = UUID.randomUUID().toString(),
+                    tipo = TipoOperacion.TAREA_PROGRESO,
+                    titulo = "Tarea con progreso ($pct%)",
+                    detalle = "Cancelada por el usuario",
+                    milisegundos = tiempoTotal,
+                    fechaHora = obtenerFechaHoraActual(),
+                    esError = false,
+                    estadoRegistro = EstadoRegistro.CANCELADO
+                )
+
+                withContext(NonCancellable) {
+                    preferencesRepo.agregarHistorial(itemCancelado)
+                }
+
+                throw e
             } finally {
                 _corriendo.value = false
             }
@@ -186,6 +225,25 @@ class TareasViewModel(
                     cantidad = ultimoProgreso.cantidadPrimos,
                     progreso = ultimoProgreso.porcentaje
                 )
+
+                val tiempoTotal = System.currentTimeMillis() - inicio
+                val pct = (ultimoProgreso.porcentaje * 100).toInt()
+
+                val itemCancelado = HistorialItem(
+                    id = UUID.randomUUID().toString(),
+                    tipo = TipoOperacion.PRIMOS,
+                    titulo = "Cálculo de primos ($pct%)",
+                    detalle = "Cancelado al $pct% (${ultimoProgreso.procesados} procesados)",
+                    milisegundos = tiempoTotal,
+                    fechaHora = obtenerFechaHoraActual(),
+                    esError = false,
+                    estadoRegistro = EstadoRegistro.CANCELADO
+                )
+
+                withContext(NonCancellable) {
+                    preferencesRepo.agregarHistorial(itemCancelado)
+                }
+
                 emitirEventoUi("Cálculo de primos cancelado")
                 throw e
             }
@@ -294,7 +352,23 @@ class TareasViewModel(
             }
 
             val mensajeFinal = ultimoError?.message ?: "Error tras $maxIntentos intentos"
+            val tiempoFinal = System.currentTimeMillis() - inicioTotal
             _carga.value = CargaUi.Error("Error tras $maxIntentos intentos: $mensajeFinal")
+
+            // Guardar registro de error en el historial de DataStore (sin alterar las estadísticas de tiempo exitosas)
+            val tipoOp = if (paralela) TipoOperacion.CARGA_PARALELA else TipoOperacion.CARGA_SECUENCIAL
+            val tituloOp = if (paralela) "Carga paralela fallida" else "Carga secuencial fallida"
+            val itemError = HistorialItem(
+                id = UUID.randomUUID().toString(),
+                tipo = tipoOp,
+                titulo = tituloOp,
+                detalle = "Fallido tras $maxIntentos intentos ($mensajeFinal)",
+                milisegundos = tiempoFinal,
+                fechaHora = obtenerFechaHoraActual(),
+                esError = true
+            )
+            preferencesRepo.agregarHistorial(itemError)
+
             emitirEventoUi("No se pudo completar la carga")
         }
     }

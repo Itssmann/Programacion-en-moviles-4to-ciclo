@@ -2,23 +2,31 @@ package com.abad.centrotareas.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val VerdePetroleo = Color(0xFF175C56)
+val VerdeSecundario = Color(0xFF006B65)
+val TurquesaAcento = Color(0xFFB5EDE2)
+val FondoGeneral = Color(0xFFF3F6F3)
+val ColorTarjeta = Color(0xFFFCFDF9)
+val ColorBorde = Color(0xFFC2CECA)
+val VerdeExitoFondo = Color(0xFFE0F2E3)
+val VerdeExitoTexto = Color(0xFF246237)
+val AmbarFondo = Color(0xFFFFEECB)
+val AmbarTexto = Color(0xFF795400)
+val RojoErrorFondo = Color(0xFFFFDAD6)
+val RojoErrorTexto = Color(0xFF963C35)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Colores semánticos compartidos: el estado nunca se comunica solo con color.
+enum class Tono { NEUTRO, ACTIVO, EXITO, CANCELADO, ERROR }
 
-// Nueva identidad visual: Verde petróleo y turquesa
-val VerdePetroleo = Color(0xFF00695C)
-val VerdeSecundario = Color(0xFF00897B)
-val TurquesaAcento = Color(0xFF80CBC4)
-val FondoGeneral = Color(0xFFF4FAF8)
-val ColorTarjeta = Color(0xFFFFFFFF)
-val ColorBorde = Color(0xFFDCE8E5)
-
-val VerdeExitoFondo = Color(0xFFE8F5E9)
-val VerdeExitoTexto = Color(0xFF1B5E20)
-val RojoErrorFondo = Color(0xFFFFEBEE)
-val RojoErrorTexto = Color(0xFFC62828)
+@androidx.compose.runtime.Composable
+fun coloresEstado(tono: Tono): Pair<Color, Color> {
+    val scheme = androidx.compose.material3.MaterialTheme.colorScheme
+    val oscuro = scheme.surface.red < 0.5f
+    return when (tono) {
+        Tono.NEUTRO -> scheme.surfaceVariant to scheme.onSurfaceVariant
+        Tono.ACTIVO -> scheme.primaryContainer to scheme.onPrimaryContainer
+        Tono.EXITO -> if (oscuro) Color(0xFF203F2B) to Color(0xFFABE0B6) else VerdeExitoFondo to VerdeExitoTexto
+        Tono.CANCELADO -> if (oscuro) Color(0xFF493A19) to Color(0xFFF4D58E) else AmbarFondo to AmbarTexto
+        Tono.ERROR -> scheme.errorContainer to scheme.onErrorContainer
+    }
+}

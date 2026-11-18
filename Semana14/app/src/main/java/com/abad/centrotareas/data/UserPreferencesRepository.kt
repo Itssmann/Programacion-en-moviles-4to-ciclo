@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.abad.centrotareas.model.EstadoRegistro
 import com.abad.centrotareas.model.HistorialItem
 import com.abad.centrotareas.model.TipoOperacion
 import kotlinx.coroutines.flow.Flow
@@ -64,7 +65,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     private fun serializarHistorial(items: List<HistorialItem>): String {
         return items.joinToString("\n") { item ->
-            "${item.id}::${item.tipo.name}::${item.titulo}::${item.detalle}::${item.milisegundos}::${item.fechaHora}"
+            "${item.id}::${item.tipo.name}::${item.titulo}::${item.detalle}::${item.milisegundos}::${item.fechaHora}::${item.esError}::${item.estadoRegistro.name}"
         }
     }
 
@@ -74,13 +75,25 @@ class UserPreferencesRepository(private val context: Context) {
             val parts = line.split("::")
             if (parts.size >= 6) {
                 try {
+                    val esError = if (parts.size >= 7) parts[6].toBoolean() else false
+                    val estadoReg = if (parts.size >= 8) {
+                        try {
+                            EstadoRegistro.valueOf(parts[7])
+                        } catch (e: Exception) {
+                            if (esError) EstadoRegistro.FALLIDO else EstadoRegistro.EXITOSO
+                        }
+                    } else {
+                        if (esError) EstadoRegistro.FALLIDO else EstadoRegistro.EXITOSO
+                    }
                     HistorialItem(
                         id = parts[0],
                         tipo = TipoOperacion.valueOf(parts[1]),
                         titulo = parts[2],
                         detalle = parts[3],
                         milisegundos = parts[4].toLong(),
-                        fechaHora = parts[5]
+                        fechaHora = parts[5],
+                        esError = esError,
+                        estadoRegistro = estadoReg
                     )
                 } catch (e: Exception) {
                     null

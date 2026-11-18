@@ -3,13 +3,21 @@ package com.abad.centrotareas.model
 enum class TipoOperacion {
     PRIMOS,
     CARGA_SECUENCIAL,
-    CARGA_PARALELA
+    CARGA_PARALELA,
+    TAREA_PROGRESO
 }
 
 enum class FiltroHistorial {
     TODOS,
+    TAREAS,
     PRIMOS,
     CARGAS
+}
+
+enum class EstadoRegistro {
+    EXITOSO,
+    CANCELADO,
+    FALLIDO
 }
 
 data class HistorialItem(
@@ -18,5 +26,7 @@ data class HistorialItem(
     val titulo: String,
     val detalle: String,
     val milisegundos: Long,
-    val fechaHora: String
+    val fechaHora: String,
+    val esError: Boolean = false,
+    val estadoRegistro: EstadoRegistro = if (esError) EstadoRegistro.FALLIDO else EstadoRegistro.EXITOSO
 )
