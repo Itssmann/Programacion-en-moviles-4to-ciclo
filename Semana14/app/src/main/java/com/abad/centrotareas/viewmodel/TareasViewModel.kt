@@ -1,10 +1,15 @@
 package com.abad.centrotareas.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.abad.centrotareas.data.PrimosProgress
 import com.abad.centrotareas.data.TareasRepository
+import com.abad.centrotareas.data.UserPreferencesRepository
 import com.abad.centrotareas.model.CargaUi
+import com.abad.centrotareas.model.FiltroHistorial
+import com.abad.centrotareas.model.HistorialItem
 import com.abad.centrotareas.model.PrimosUi
+import com.abad.centrotareas.model.TipoOperacion
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
@@ -17,12 +22,19 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import androidx.lifecycle.viewModelScope
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
 class TareasViewModel(
-    private val repo: TareasRepository
+    private val repo: TareasRepository,
+    private val preferencesRepo: UserPreferencesRepository
 ) : ViewModel() {
 
     // Eventos de interfaz (Snackbar)
@@ -33,6 +45,42 @@ class TareasViewModel(
         viewModelScope.launch {
             _eventosUi.emit(mensaje)
         }
+    }
+
+    // Persistencia e Historial con DataStore
+    val historial: StateFlow<List<HistorialItem>> = preferencesRepo.historialFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val tiempoSecuencial: StateFlow<Long?> = preferencesRepo.tiempoSecuencialFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val tiempoParalelo: StateFlow<Long?> = preferencesRepo.tiempoParaleloFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    private val _filtroHistorial = MutableStateFlow(FiltroHistorial.TODOS)
+    val filtroHistorial: StateFlow<FiltroHistorial> = _filtroHistorial.asStateFlow()
+
+    val historialFiltrado: StateFlow<List<HistorialItem>> = combine(historial, _filtroHistorial) { lista, filtro ->
+        when (filtro) {
+            FiltroHistorial.TODOS -> lista
+            FiltroHistorial.PRIMOS -> lista.filter { it.tipo == TipoOperacion.PRIMOS }
+            FiltroHistorial.CARGAS -> lista.filter { it.tipo != TipoOperacion.PRIMOS }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun cambiarFiltroHistorial(filtro: FiltroHistorial) {
+        _filtroHistorial.value = filtro
+    }
+
+    fun limpiarHistorial() {
+        viewModelScope.launch {
+            preferencesRepo.limpiarHistorial()
+            emitirEventoUi("Historial de actividad borrado")
+        }
+    }
+
+    private fun obtenerFechaHoraActual(): String {
+        return SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
     }
 
     // Tarea con progreso: pasos 1 al 4
@@ -54,7 +102,6 @@ class TareasViewModel(
 
         _mensaje.value = "Terminó"
     }
-
 
     fun tareaLarga() {
         if (_corriendo.value) return
@@ -86,11 +133,8 @@ class TareasViewModel(
     }
 
     // Contar números primos: paso 5
-    private val _primos =
-        MutableStateFlow<PrimosUi>(PrimosUi.Inicial)
-
-    val primos: StateFlow<PrimosUi> =
-        _primos.asStateFlow()
+    private val _primos = MutableStateFlow<PrimosUi>(PrimosUi.Inicial)
+    val primos: StateFlow<PrimosUi> = _primos.asStateFlow()
 
     private var primosJob: Job? = null
 
@@ -121,6 +165,18 @@ class TareasViewModel(
                     cantidad = ultimoProgreso.cantidadPrimos,
                     milisegundos = tiempo
                 )
+
+                // Guardar resultado en historial DataStore
+                val nuevoItem = HistorialItem(
+                    id = UUID.randomUUID().toString(),
+                    tipo = TipoOperacion.PRIMOS,
+                    titulo = "Cálculo de primos (N = $hasta)",
+                    detalle = "${ultimoProgreso.cantidadPrimos} primos encontrados",
+                    milisegundos = tiempo,
+                    fechaHora = obtenerFechaHoraActual()
+                )
+                preferencesRepo.agregarHistorial(nuevoItem)
+
                 emitirEventoUi("Cálculo de primos completado")
 
             } catch (e: CancellationException) {
@@ -141,16 +197,11 @@ class TareasViewModel(
     }
 
     // Dos cargas: pasos 6 y 7 con Reintentos y Timeout
-    private val _carga =
-        MutableStateFlow<CargaUi>(CargaUi.Inicial)
-
-    val carga: StateFlow<CargaUi> =
-        _carga.asStateFlow()
+    private val _carga = MutableStateFlow<CargaUi>(CargaUi.Inicial)
+    val carga: StateFlow<CargaUi> = _carga.asStateFlow()
 
     private val _simularError = MutableStateFlow(false)
-
-    val simularError: StateFlow<Boolean> =
-        _simularError.asStateFlow()
+    val simularError: StateFlow<Boolean> = _simularError.asStateFlow()
 
     private var cargaJob: Job? = null
 
@@ -203,6 +254,21 @@ class TareasViewModel(
                         pedidos = pedidos.size,
                         milisegundos = tiempoTotal
                     )
+
+                    // Guardar resultado y tiempos en DataStore
+                    val tipoOp = if (paralela) TipoOperacion.CARGA_PARALELA else TipoOperacion.CARGA_SECUENCIAL
+                    val tituloOp = if (paralela) "Carga paralela (A la vez)" else "Carga secuencial (Una por una)"
+                    val nuevoItem = HistorialItem(
+                        id = UUID.randomUUID().toString(),
+                        tipo = tipoOp,
+                        titulo = tituloOp,
+                        detalle = "Perfil ($perfil) + ${pedidos.size} pedidos",
+                        milisegundos = tiempoTotal,
+                        fechaHora = obtenerFechaHoraActual()
+                    )
+                    preferencesRepo.agregarHistorial(nuevoItem)
+                    preferencesRepo.guardarTiempoCarga(paralela, tiempoTotal)
+
                     emitirEventoUi("Carga completada en $tiempoTotal ms")
                     return@launch
 

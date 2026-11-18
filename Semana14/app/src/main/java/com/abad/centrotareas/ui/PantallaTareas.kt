@@ -25,7 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.abad.centrotareas.model.CargaUi
+import com.abad.centrotareas.model.FiltroHistorial
+import com.abad.centrotareas.model.HistorialItem
 import com.abad.centrotareas.model.PrimosUi
+import com.abad.centrotareas.model.TipoOperacion
 import com.abad.centrotareas.ui.theme.ColorBorde
 import com.abad.centrotareas.ui.theme.ColorTarjeta
 import com.abad.centrotareas.ui.theme.FondoGeneral
@@ -666,6 +669,283 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            // 4. Comparación de rendimiento
+            item {
+                val tSecuencial by viewModel.tiempoSecuencial.collectAsState()
+                val tParalelo by viewModel.tiempoParalelo.collectAsState()
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = ColorTarjeta),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ColorBorde)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            "Comparación de rendimiento",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = VerdePetroleo
+                        )
+
+                        val maxTime = maxOf(tSecuencial ?: 1L, tParalelo ?: 1L, 5000L).toFloat()
+
+                        // Bar 1: Secuencial
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "Una por una (Secuencial)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    if (tSecuencial != null) "${tSecuencial} ms" else "Pendiente",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (tSecuencial != null) Color.DarkGray else Color.Gray
+                                )
+                            }
+                            LinearProgressIndicator(
+                                progress = { ((tSecuencial ?: 0L).toFloat() / maxTime).coerceIn(0.05f, 1f) },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color(0xFFE53935),
+                                trackColor = Color(0xFFFFEBEE)
+                            )
+                        }
+
+                        // Bar 2: Paralela
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "A la vez (Paralela)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    if (tParalelo != null) "${tParalelo} ms" else "Pendiente",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (tParalelo != null) VerdePetroleo else Color.Gray
+                                )
+                            }
+                            LinearProgressIndicator(
+                                progress = { ((tParalelo ?: 0L).toFloat() / maxTime).coerceIn(0.05f, 1f) },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = VerdeSecundario,
+                                trackColor = Color(0xFFE0F2F1)
+                            )
+                        }
+
+                        // Conclusión dinámica
+                        val conclusionTexto = when {
+                            tSecuencial != null && tParalelo != null -> {
+                                val dif = tSecuencial!! - tParalelo!!
+                                val porcentaje = ((dif.toFloat() / tSecuencial!!) * 100).toInt()
+                                "La ejecución paralela fue un $porcentaje% más rápida ($dif ms ahorrados)"
+                            }
+                            tSecuencial == null && tParalelo == null -> "Ejecuta ambas modalidades ('Una por una' y 'A la vez') para ver el análisis de eficiencia."
+                            tSecuencial == null -> "Ejecuta la prueba 'Una por una' para completar la comparación."
+                            else -> "Ejecuta la prueba 'A la vez' para completar la comparación."
+                        }
+
+                        Surface(
+                            color = if (tSecuencial != null && tParalelo != null) VerdeExitoFondo else Color(0xFFF5F5F5),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, if (tSecuencial != null && tParalelo != null) Color(0xFFA5D6A7) else ColorBorde),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                conclusionTexto,
+                                modifier = Modifier.padding(10.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tSecuencial != null && tParalelo != null) VerdeExitoTexto else Color.DarkGray
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 5. Historial de actividad
+            item {
+                val historialFiltrado by viewModel.historialFiltrado.collectAsState()
+                val filtroActual by viewModel.filtroHistorial.collectAsState()
+                var mostrarDialogoBorrar by remember { mutableStateOf(false) }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = ColorTarjeta),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ColorBorde)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Historial de actividad",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = VerdePetroleo
+                            )
+
+                            if (historialFiltrado.isNotEmpty()) {
+                                OutlinedButton(
+                                    onClick = { mostrarDialogoBorrar = true },
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RojoErrorTexto),
+                                    border = BorderStroke(1.dp, Color(0xFFEF9A9A)),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                ) {
+                                    Text("Limpiar", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+
+                        // FilterChips
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                selected = filtroActual == FiltroHistorial.TODOS,
+                                onClick = { viewModel.cambiarFiltroHistorial(FiltroHistorial.TODOS) },
+                                label = { Text("Todos") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = VerdePetroleo,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+
+                            FilterChip(
+                                selected = filtroActual == FiltroHistorial.PRIMOS,
+                                onClick = { viewModel.cambiarFiltroHistorial(FiltroHistorial.PRIMOS) },
+                                label = { Text("Primos") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = VerdePetroleo,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+
+                            FilterChip(
+                                selected = filtroActual == FiltroHistorial.CARGAS,
+                                onClick = { viewModel.cambiarFiltroHistorial(FiltroHistorial.CARGAS) },
+                                label = { Text("Cargas") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = VerdePetroleo,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+
+                        if (historialFiltrado.isEmpty()) {
+                            Surface(
+                                color = Color(0xFFFAFAFA),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, ColorBorde),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        "No hay registros guardados aún",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                historialFiltrado.take(5).forEach { item ->
+                                    Surface(
+                                        color = Color(0xFFFAFAFA),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(1.dp, ColorBorde),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    item.titulo,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = VerdePetroleo
+                                                )
+                                                Text(
+                                                    item.detalle,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color.DarkGray
+                                                )
+                                                Text(
+                                                    item.fechaHora,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = Color.Gray
+                                                )
+                                            }
+
+                                            Surface(
+                                                color = VerdeSecundario.copy(alpha = 0.15f),
+                                                shape = RoundedCornerShape(6.dp)
+                                            ) {
+                                                Text(
+                                                    "${item.milisegundos} ms",
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = VerdePetroleo
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (mostrarDialogoBorrar) {
+                            AlertDialog(
+                                onDismissRequest = { mostrarDialogoBorrar = false },
+                                title = { Text("Borrar historial") },
+                                text = { Text("¿Estás seguro de que deseas eliminar los registros del historial?") },
+                                confirmButton = {
+                                    Button(
+                                        onClick = {
+                                            viewModel.limpiarHistorial()
+                                            mostrarDialogoBorrar = false
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = RojoErrorTexto)
+                                    ) {
+                                        Text("Borrar")
+                                    }
+                                },
+                                dismissButton = {
+                                    OutlinedButton(
+                                        onClick = { mostrarDialogoBorrar = false }
+                                    ) {
+                                        Text("Cancelar")
+                                    }
+                                }
+                            )
                         }
                     }
                 }
