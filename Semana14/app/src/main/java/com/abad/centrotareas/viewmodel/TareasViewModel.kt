@@ -1,23 +1,39 @@
 package com.abad.centrotareas.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.abad.centrotareas.data.PrimosProgress
 import com.abad.centrotareas.data.TareasRepository
 import com.abad.centrotareas.model.CargaUi
 import com.abad.centrotareas.model.PrimosUi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import androidx.lifecycle.viewModelScope
 
 class TareasViewModel(
     private val repo: TareasRepository
 ) : ViewModel() {
+
+    // Eventos de interfaz (Snackbar)
+    private val _eventosUi = MutableSharedFlow<String>()
+    val eventosUi: SharedFlow<String> = _eventosUi.asSharedFlow()
+
+    private fun emitirEventoUi(mensaje: String) {
+        viewModelScope.launch {
+            _eventosUi.emit(mensaje)
+        }
+    }
 
     // Tarea con progreso: pasos 1 al 4
     private val _mensaje = MutableStateFlow("Listo")
@@ -55,6 +71,7 @@ class TareasViewModel(
                 }
 
                 _mensaje.value = "Terminó"
+                emitirEventoUi("Tarea de progreso completada")
 
             } finally {
                 _corriendo.value = false
@@ -65,7 +82,9 @@ class TareasViewModel(
     fun cancelar() {
         trabajo?.cancel()
         _mensaje.value = "Cancelado"
+        emitirEventoUi("Tarea cancelada")
     }
+
     // Contar números primos: paso 5
     private val _primos =
         MutableStateFlow<PrimosUi>(PrimosUi.Inicial)
@@ -83,11 +102,11 @@ class TareasViewModel(
             _primos.value = PrimosUi.Calculando(procesados = 0, limite = hasta, cantidad = 0, progreso = 0f)
 
             val inicio = System.currentTimeMillis()
-            var ultimaCantidad = 0
+            var ultimoProgreso = PrimosProgress(0, hasta, 0, 0f)
 
             try {
                 repo.contarPrimosFlow(hasta).collect { progress ->
-                    ultimaCantidad = progress.cantidadPrimos
+                    ultimoProgreso = progress
                     _primos.value = PrimosUi.Calculando(
                         procesados = progress.procesados,
                         limite = progress.limite,
@@ -99,21 +118,29 @@ class TareasViewModel(
                 val tiempo = System.currentTimeMillis() - inicio
 
                 _primos.value = PrimosUi.Listo(
-                    cantidad = ultimaCantidad,
+                    cantidad = ultimoProgreso.cantidadPrimos,
                     milisegundos = tiempo
                 )
+                emitirEventoUi("Cálculo de primos completado")
 
             } catch (e: CancellationException) {
-                _primos.value = PrimosUi.Cancelado
+                _primos.value = PrimosUi.Cancelado(
+                    procesados = ultimoProgreso.procesados,
+                    limite = ultimoProgreso.limite,
+                    cantidad = ultimoProgreso.cantidadPrimos,
+                    progreso = ultimoProgreso.porcentaje
+                )
+                emitirEventoUi("Cálculo de primos cancelado")
                 throw e
             }
         }
     }
+
     fun cancelarPrimos() {
         primosJob?.cancel()
     }
 
-    // Dos cargas: pasos 6 y 7
+    // Dos cargas: pasos 6 y 7 con Reintentos y Timeout
     private val _carga =
         MutableStateFlow<CargaUi>(CargaUi.Inicial)
 
@@ -125,10 +152,11 @@ class TareasViewModel(
     val simularError: StateFlow<Boolean> =
         _simularError.asStateFlow()
 
+    private var cargaJob: Job? = null
+
     fun cambiarSimularError(valor: Boolean) {
         _simularError.value = valor
     }
-
 
     fun cargarUnaPorUna() {
         ejecutarCarga(paralela = false)
@@ -137,51 +165,71 @@ class TareasViewModel(
     fun cargarALaVez() {
         ejecutarCarga(paralela = true)
     }
+
     private fun ejecutarCarga(paralela: Boolean) {
-        if (_carga.value == CargaUi.Cargando) return
+        if (_carga.value is CargaUi.Cargando) return
 
-        viewModelScope.launch {
-            _carga.value = CargaUi.Cargando
-            val inicio = System.currentTimeMillis()
+        cargaJob = viewModelScope.launch {
+            val maxIntentos = 3
+            val inicioTotal = System.currentTimeMillis()
+            var ultimoError: Exception? = null
 
-            try {
-                val (perfil, pedidos) = if (paralela) {
-                    coroutineScope {
-                        val perfilAsync = async {
-                            repo.cargarPerfil()
+            for (intento in 1..maxIntentos) {
+                _carga.value = CargaUi.Cargando(
+                    intentoActual = intento,
+                    maxIntentos = maxIntentos,
+                    mensajeEspera = if (intento > 1) "Ejecutando intento $intento de $maxIntentos..." else null
+                )
+
+                try {
+                    val (perfil, pedidos) = withTimeout(7000) {
+                        if (paralela) {
+                            coroutineScope {
+                                val perfilAsync = async { repo.cargarPerfil() }
+                                val pedidosAsync = async { repo.cargarPedidos(_simularError.value) }
+                                Pair(perfilAsync.await(), pedidosAsync.await())
+                            }
+                        } else {
+                            val perfil = repo.cargarPerfil()
+                            val pedidos = repo.cargarPedidos(_simularError.value)
+                            Pair(perfil, pedidos)
                         }
-
-                        val pedidosAsync = async {
-                            repo.cargarPedidos(_simularError.value)
-                        }
-
-                        Pair(
-                            perfilAsync.await(),
-                            pedidosAsync.await()
-                        )
                     }
-                } else {
-                    val perfil = repo.cargarPerfil()
-                    val pedidos = repo.cargarPedidos(_simularError.value)
 
-                    Pair(perfil, pedidos)
+                    val tiempoTotal = System.currentTimeMillis() - inicioTotal
+                    _carga.value = CargaUi.Exito(
+                        modo = if (paralela) "A la vez" else "Una por una",
+                        perfil = perfil,
+                        pedidos = pedidos.size,
+                        milisegundos = tiempoTotal
+                    )
+                    emitirEventoUi("Carga completada en $tiempoTotal ms")
+                    return@launch
+
+                } catch (e: TimeoutCancellationException) {
+                    ultimoError = Exception("Tiempo de espera agotado (> 7s)")
+                } catch (e: CancellationException) {
+                    _carga.value = CargaUi.Inicial
+                    throw e
+                } catch (e: Exception) {
+                    ultimoError = e
                 }
-                val tiempo = System.currentTimeMillis() - inicio
 
-                _carga.value = CargaUi.Exito(
-                    modo = if (paralela) "A la vez" else "Una por una",
-                    perfil = perfil,
-                    pedidos = pedidos.size,
-                    milisegundos = tiempo
-                )
-            } catch (e: CancellationException) {
-                throw e
-
-            } catch (e: Exception) {
-                _carga.value = CargaUi.Error(
-                    "No se pudo cargar: ${e.message ?: "Error desconocido"}"
-                )
+                // Exponential Backoff: si falló y no es el último intento
+                if (intento < maxIntentos) {
+                    val esperaSegundos = if (intento == 1) 1 else 2
+                    _carga.value = CargaUi.Cargando(
+                        intentoActual = intento + 1,
+                        maxIntentos = maxIntentos,
+                        mensajeEspera = "Fallo en intento $intento. Esperando ${esperaSegundos}s para reintentar..."
+                    )
+                    delay(esperaSegundos * 1000L)
+                }
             }
+
+            val mensajeFinal = ultimoError?.message ?: "Error tras $maxIntentos intentos"
+            _carga.value = CargaUi.Error("Error tras $maxIntentos intentos: $mensajeFinal")
+            emitirEventoUi("No se pudo completar la carga")
         }
     }
 }

@@ -12,12 +12,21 @@ sealed interface PrimosUi {
         val cantidad: Int,
         val milisegundos: Long
     ) : PrimosUi
-    data object Cancelado : PrimosUi
+    data class Cancelado(
+        val procesados: Int = 0,
+        val limite: Int = 0,
+        val cantidad: Int = 0,
+        val progreso: Float = 0f
+    ) : PrimosUi
 }
 
 sealed interface CargaUi {
     data object Inicial : CargaUi
-    data object Cargando : CargaUi
+    data class Cargando(
+        val intentoActual: Int = 1,
+        val maxIntentos: Int = 3,
+        val mensajeEspera: String? = null
+    ) : CargaUi
     data class Exito(
         val modo: String,
         val perfil: String,

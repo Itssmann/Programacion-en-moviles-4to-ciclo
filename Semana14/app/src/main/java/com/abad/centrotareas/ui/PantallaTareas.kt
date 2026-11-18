@@ -1,12 +1,14 @@
 package com.abad.centrotareas.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -15,7 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -46,7 +51,30 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val calculando = primos is PrimosUi.Calculando
     val contador = remember { mutableIntStateOf(0) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.eventosUi.collect { mensajeEvento ->
+            snackbarHostState.showSnackbar(
+                message = mensajeEvento,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
+            ) { snackbarData ->
+                Snackbar(
+                    snackbarData = snackbarData,
+                    containerColor = VerdePetroleo,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(8.dp)
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -292,20 +320,116 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                 }
                             }
 
-                            PrimosUi.Cancelado -> {
+                            is PrimosUi.Cancelado -> {
                                 Surface(
-                                    color = Color(0xFFFFF3E0),
-                                    shape = RoundedCornerShape(8.dp),
-                                    border = BorderStroke(1.dp, Color(0xFFFFCC80)),
+                                    color = Color(0xFFFFF8E1),
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = BorderStroke(1.dp, Color(0xFFFFE082)),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(
-                                        "Cálculo cancelado",
-                                        modifier = Modifier.padding(12.dp),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFFE65100),
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Column(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Canvas(modifier = Modifier.size(22.dp)) {
+                                                    val strokeWidth = size.width * 0.15f
+                                                    val pad = size.width * 0.2f
+                                                    val colorX = Color(0xFFE65100)
+
+                                                    drawLine(
+                                                        color = colorX,
+                                                        start = Offset(pad, pad),
+                                                        end = Offset(size.width - pad, size.height - pad),
+                                                        strokeWidth = strokeWidth
+                                                    )
+                                                    drawLine(
+                                                        color = colorX,
+                                                        start = Offset(size.width - pad, pad),
+                                                        end = Offset(pad, size.height - pad),
+                                                        strokeWidth = strokeWidth
+                                                    )
+                                                }
+                                                Text(
+                                                    "Cálculo cancelado",
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFFE65100)
+                                                )
+                                            }
+
+                                            Text(
+                                                "${(estado.progreso * 100).toInt()}%",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color(0xFFE65100)
+                                            )
+                                        }
+
+                                        LinearProgressIndicator(
+                                            progress = { estado.progreso },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = Color(0xFFF57C00),
+                                            trackColor = Color(0xFFFFE0B2)
+                                        )
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Surface(
+                                                color = Color(0xFFFFF3E0),
+                                                shape = RoundedCornerShape(6.dp),
+                                                border = BorderStroke(1.dp, Color(0xFFFFE0B2)),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Column(modifier = Modifier.padding(8.dp)) {
+                                                    Text(
+                                                        "Números procesados",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = Color(0xFF8D6E63)
+                                                    )
+                                                    Text(
+                                                        "${estado.procesados} / ${estado.limite}",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFF5D4037)
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(Modifier.width(8.dp))
+
+                                            Surface(
+                                                color = Color(0xFFFFF3E0),
+                                                shape = RoundedCornerShape(6.dp),
+                                                border = BorderStroke(1.dp, Color(0xFFFFE0B2)),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Column(modifier = Modifier.padding(8.dp)) {
+                                                    Text(
+                                                        "Primos encontrados",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = Color(0xFF8D6E63)
+                                                    )
+                                                    Text(
+                                                        "${estado.cantidad}",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFF5D4037)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -348,9 +472,14 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                 onCheckedChange = {
                                     viewModel.cambiarSimularError(it)
                                 },
+                                modifier = Modifier.scale(1.05f),
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = VerdeSecundario
+                                    checkedTrackColor = VerdePetroleo,
+                                    checkedBorderColor = VerdePetroleo,
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = Color(0xFFE0E0E0),
+                                    uncheckedBorderColor = Color(0xFF757575)
                                 )
                             )
                         }
@@ -362,7 +491,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         ) {
                             Button(
                                 onClick = { viewModel.cargarUnaPorUna() },
-                                enabled = carga != CargaUi.Cargando,
+                                enabled = carga !is CargaUi.Cargando,
                                 colors = ButtonDefaults.buttonColors(containerColor = VerdePetroleo)
                             ) {
                                 Text("Una por una")
@@ -370,7 +499,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
 
                             OutlinedButton(
                                 onClick = { viewModel.cargarALaVez() },
-                                enabled = carga != CargaUi.Cargando,
+                                enabled = carga !is CargaUi.Cargando,
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = VerdePetroleo),
                                 border = BorderStroke(1.dp, ColorBorde)
                             ) {
@@ -389,20 +518,50 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                                 )
                             }
 
-                            CargaUi.Cargando -> {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            is CargaUi.Cargando -> {
+                                Surface(
+                                    color = Color(0xFFF5F5F5),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, ColorBorde),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = VerdeSecundario,
-                                        strokeWidth = 2.5.dp
-                                    )
-                                    Text(
-                                        "Cargando datos...",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                    Column(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(22.dp),
+                                                color = VerdeSecundario,
+                                                strokeWidth = 2.5.dp
+                                            )
+                                            Text(
+                                                "Cargando datos — Intento ${estado.intentoActual} de ${estado.maxIntentos}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = VerdePetroleo
+                                            )
+                                        }
+
+                                        estado.mensajeEspera?.let { msg ->
+                                            Surface(
+                                                color = Color(0xFFFFF3E0),
+                                                shape = RoundedCornerShape(6.dp),
+                                                border = BorderStroke(1.dp, Color(0xFFFFCC80))
+                                            ) {
+                                                Text(
+                                                    msg,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color(0xFFE65100),
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -446,29 +605,63 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                             is CargaUi.Error -> {
                                 Surface(
                                     color = RojoErrorFondo,
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(10.dp),
                                     border = BorderStroke(1.dp, Color(0xFFEF9A9A)),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(
-                                        modifier = Modifier.padding(12.dp)
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Canvas(modifier = Modifier.size(22.dp)) {
+                                                val path = Path().apply {
+                                                    moveTo(size.width / 2f, 1f)
+                                                    lineTo(size.width - 1f, size.height - 1f)
+                                                    lineTo(1f, size.height - 1f)
+                                                    close()
+                                                }
+                                                drawPath(path = path, color = RojoErrorTexto)
+
+                                                drawLine(
+                                                    color = Color.White,
+                                                    start = Offset(size.width / 2f, size.height * 0.35f),
+                                                    end = Offset(size.width / 2f, size.height * 0.65f),
+                                                    strokeWidth = 3f
+                                                )
+                                                drawCircle(
+                                                    color = Color.White,
+                                                    radius = 2f,
+                                                    center = Offset(size.width / 2f, size.height * 0.78f)
+                                                )
+                                            }
+
+                                            Text(
+                                                "Error de conexión",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = RojoErrorTexto
+                                            )
+                                        }
+
                                         Text(
                                             estado.mensaje,
-                                            color = RojoErrorTexto,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold
+                                            color = Color(0xFF5C0000),
+                                            style = MaterialTheme.typography.bodyMedium
                                         )
-
-                                        Spacer(Modifier.height(8.dp))
 
                                         Button(
                                             onClick = {
                                                 viewModel.cargarALaVez()
                                             },
-                                            colors = ButtonDefaults.buttonColors(containerColor = RojoErrorTexto)
+                                            colors = ButtonDefaults.buttonColors(containerColor = RojoErrorTexto),
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.align(Alignment.End)
                                         ) {
-                                            Text("Reintentar", color = Color.White)
+                                            Text("Reintentar", fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
