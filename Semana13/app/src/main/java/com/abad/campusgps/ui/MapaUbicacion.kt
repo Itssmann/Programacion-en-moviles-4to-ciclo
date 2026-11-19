@@ -417,6 +417,29 @@ fun MapaUbicacion(
         )
     }
 
+    // Centrar el mapa en el lugar seleccionado.
+    LaunchedEffect(seleccionado, estilo, mapa) {
+
+        val id = seleccionado ?: return@LaunchedEffect
+
+        val lugar = lugares.firstOrNull {
+            it.lugar.id == id
+        }?.lugar ?: return@LaunchedEffect
+
+        mapa?.cancelTransitions()
+
+        mapa?.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(
+                LatLng(
+                    lugar.latitud,
+                    lugar.longitud
+                ),
+                17.0
+            ),
+            1000
+        )
+    }
+
     Box(modifier) {
 
         AndroidView(

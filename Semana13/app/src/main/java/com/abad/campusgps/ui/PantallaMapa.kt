@@ -18,7 +18,11 @@ import com.abad.campusgps.viewmodel.MapaViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaMapa(viewModel: MapaViewModel) {
+
     val estado by viewModel.estado.collectAsState()
+    val lugares by viewModel.lugares.collectAsState()
+    val seleccionado by viewModel.seleccionado.collectAsState()
+
     val contexto = LocalContext.current
 
     fun tienePermisoUbicacion(): Boolean {
@@ -26,21 +30,23 @@ fun PantallaMapa(viewModel: MapaViewModel) {
             contexto,
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+
         val aproximado = ContextCompat.checkSelfPermission(
             contexto,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+
         return preciso || aproximado
     }
 
     val lanzadorPermisos = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { resultado ->
+
         val permisoConcedido =
             resultado[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                resultado[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+                    resultado[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
-        // Antes de mostrar un rechazo, comprobar también los permisos actuales.
         if (permisoConcedido || tienePermisoUbicacion()) {
             viewModel.buscar()
         } else {
@@ -48,13 +54,12 @@ fun PantallaMapa(viewModel: MapaViewModel) {
         }
     }
 
-    val lugares by viewModel.lugares.collectAsState()
-    val seleccionado by viewModel.seleccionado.collectAsState()
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("CampusGPS") },
+                title = {
+                    Text("CampusGPS")
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -62,19 +67,39 @@ fun PantallaMapa(viewModel: MapaViewModel) {
             )
         }
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+
+            // Mapa en la parte superior.
             MapaUbicacion(
                 estado = estado,
                 lugares = lugares,
                 seleccionado = seleccionado,
-                modifier = Modifier.fillMaxWidth().weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             )
-            Surface(color = MaterialTheme.colorScheme.surface) {
+
+            // Controles de ubicación.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface
+            ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = 16.dp,
+                            vertical = 10.dp
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
+
                     Button(
                         onClick = {
                             if (tienePermisoUbicacion()) {
@@ -94,27 +119,76 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                     }
 
                     when (val actual = estado) {
+
                         UbicacionUi.Inicial -> {
-                            Text("Consulta tu ubicación actual")
+                            Text(
+                                "Consulta tu ubicación actual",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
 
                         UbicacionUi.Buscando -> {
-                            CircularProgressIndicator()
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.dp
+                            )
                         }
 
                         is UbicacionUi.Lista -> {
-                            Text("Latitud: ${actual.posicion.latitud}")
-                            Text("Longitud: ${actual.posicion.longitud}")
+                            Text(
+                                "Latitud: ${actual.posicion.latitud}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+
+                            Text(
+                                "Longitud: ${actual.posicion.longitud}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
 
                         is UbicacionUi.Error -> {
                             Text(
                                 text = actual.mensaje,
-                                color = MaterialTheme.colorScheme.error
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
                     }
+                }
+            }
 
+            // Lista inferior de lugares.
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = 12.dp,
+                        vertical = 6.dp
+                    )
+                ) {
+
+                    Text(
+                        text = "Lugares cercanos",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(
+                            start = 4.dp,
+                            bottom = 6.dp
+                        )
+                    )
+
+                    ListaLugares(
+                        lugares = lugares,
+                        seleccionado = seleccionado,
+                        onSeleccionar = { id ->
+                            viewModel.seleccionar(id)
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
