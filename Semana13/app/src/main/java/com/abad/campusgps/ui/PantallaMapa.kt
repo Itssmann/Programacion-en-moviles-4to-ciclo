@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.abad.campusgps.model.UbicacionUi
+import com.abad.campusgps.util.formatearDistancia
 import com.abad.campusgps.viewmodel.MapaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,6 +23,8 @@ fun PantallaMapa(viewModel: MapaViewModel) {
     val estado by viewModel.estado.collectAsState()
     val lugares by viewModel.lugares.collectAsState()
     val seleccionado by viewModel.seleccionado.collectAsState()
+    val masCercano by viewModel.masCercano.collectAsState()
+    val solicitudCentrar by viewModel.solicitudCentrar.collectAsState()
 
     val contexto = LocalContext.current
 
@@ -54,6 +57,10 @@ fun PantallaMapa(viewModel: MapaViewModel) {
         }
     }
 
+    val distanciaMasCercano = masCercano?.let { lugar ->
+        lugares.firstOrNull { it.lugar.id == lugar.id }?.metros
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,21 +81,24 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                 .padding(padding)
         ) {
 
-            // Mapa en la parte superior.
+            // Mapa superior.
             MapaUbicacion(
                 estado = estado,
                 lugares = lugares,
                 seleccionado = seleccionado,
+                masCercanoId = masCercano?.id,
+                solicitudCentrar = solicitudCentrar,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
             )
 
-            // Controles de ubicación.
+            // Controles inferiores.
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface
             ) {
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -139,7 +149,6 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                                 "Latitud: ${actual.posicion.latitud}",
                                 style = MaterialTheme.typography.bodySmall
                             )
-
                             Text(
                                 "Longitud: ${actual.posicion.longitud}",
                                 style = MaterialTheme.typography.bodySmall
@@ -154,31 +163,31 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                             )
                         }
                     }
-                }
-            }
 
-            // Lista inferior de lugares.
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp),
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Column(
-                    modifier = Modifier.padding(
-                        horizontal = 12.dp,
-                        vertical = 6.dp
-                    )
-                ) {
+                    // Paso 7: lugar más cercano.
+                    Button(
+                        onClick = {
+                            viewModel.irAlMasCercano()
+                        },
+                        enabled = masCercano != null &&
+                                estado is UbicacionUi.Lista
+                    ) {
+                        Text("Ir al más cercano")
+                    }
+
+                    if (masCercano != null && distanciaMasCercano != null) {
+                        Text(
+                            text = "Más cercano: ${masCercano!!.nombre} " +
+                                    "(${formatearDistancia(distanciaMasCercano)})",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
 
                     Text(
                         text = "Lugares cercanos",
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(
-                            start = 4.dp,
-                            bottom = 6.dp
-                        )
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     ListaLugares(
@@ -187,7 +196,9 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                         onSeleccionar = { id ->
                             viewModel.seleccionar(id)
                         },
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(125.dp)
                     )
                 }
             }

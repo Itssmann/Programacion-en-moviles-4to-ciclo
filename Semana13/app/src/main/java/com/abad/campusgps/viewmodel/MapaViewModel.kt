@@ -108,7 +108,12 @@ class MapaViewModel(
     }
 
     // Paso 7: ir al lugar más cercano.
+    fun irAlMasCercano() {
+        val lugar = masCercano.value ?: return
 
+        _seleccionado.value = lugar.id
+        _solicitudCentrar.value++
+    }
     fun permisoDenegado() {
         _estado.value = UbicacionUi.Error(
             "Sin permiso de ubicación no puedo mostrar dónde estás"

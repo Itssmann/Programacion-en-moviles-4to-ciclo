@@ -47,18 +47,22 @@ private const val FUENTE = "ubicacion-actual"
 private const val ICONO = "marcador-rojo"
 
 private const val FUENTE_LUGARES = "lugares-campus"
-private const val ICONO_LUGAR = "marcador-turquesa"
+private const val ICONO_LUGAR = "marcador-azul"
+
+private const val FUENTE_MAS_CERCANO = "lugar-mas-cercano"
+private const val ICONO_MAS_CERCANO = "marcador-verde"
 
 private class ControlCamara {
     var movidaPorUsuario = false
 }
 
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun MapaUbicacion(
     estado: UbicacionUi,
     lugares: List<LugarConDistancia>,
     seleccionado: Int?,
+    masCercanoId: Int?,
+    solicitudCentrar: Int,
     modifier: Modifier = Modifier
 ) {
     val contexto = LocalContext.current
@@ -97,12 +101,10 @@ fun MapaUbicacion(
         var destruido = false
         var iniciado = false
         var reanudado = false
-
         var mapaConListener: MapLibreMap? = null
 
         val movimiento =
             MapLibreMap.OnCameraMoveStartedListener { motivo ->
-
                 if (
                     motivo ==
                     MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE
@@ -120,7 +122,6 @@ fun MapaUbicacion(
 
         fun detener() {
             pausar()
-
             if (iniciado) {
                 vista.onStop()
                 iniciado = false
@@ -129,22 +130,17 @@ fun MapaUbicacion(
 
         fun destruir() {
             if (!destruido) {
-
                 mapaConListener?.removeOnCameraMoveStartedListener(
                     movimiento
                 )
-
                 mapaConListener = null
-
                 detener()
                 vista.onDestroy()
-
                 destruido = true
             }
         }
 
         val fallo = MapView.OnDidFailLoadingMapListener { mensaje ->
-
             if (!destruido) {
                 errorMapa = "No se pudo cargar el mapa: $mensaje"
             }
@@ -159,9 +155,7 @@ fun MapaUbicacion(
                 mapa = disponible
                 mapaConListener = disponible
 
-                disponible.addOnCameraMoveStartedListener(
-                    movimiento
-                )
+                disponible.addOnCameraMoveStartedListener(movimiento)
 
                 disponible.cameraPosition =
                     CameraPosition.Builder()
@@ -176,95 +170,101 @@ fun MapaUbicacion(
 
                     if (!destruido) {
 
-                        // Registrar ambos iconos.
+                        // Registrar los tres marcadores.
+                        cargado.addImage(ICONO, crearMarcadorRojo())
+                        cargado.addImage(ICONO_LUGAR, crearMarcadorAzul())
                         cargado.addImage(
-                            ICONO,
-                            crearMarcadorRojo()
+                            ICONO_MAS_CERCANO,
+                            crearMarcadorVerde()
                         )
 
-                        cargado.addImage(
-                            ICONO_LUGAR,
-                            crearMarcadorAzul()
-                        )
-
-                        // Crear fuente de ubicación actual.
+                        // Fuente de ubicación actual.
                         cargado.addSource(
                             GeoJsonSource(
                                 FUENTE,
-                                FeatureCollection.fromFeatures(
-                                    emptyArray()
-                                )
+                                FeatureCollection.fromFeatures(emptyArray())
                             )
                         )
 
-                        // Crear fuente de lugares.
+                        // Fuente de lugares azules.
                         cargado.addSource(
                             GeoJsonSource(
                                 FUENTE_LUGARES,
-                                FeatureCollection.fromFeatures(
-                                    emptyArray()
-                                )
+                                FeatureCollection.fromFeatures(emptyArray())
                             )
                         )
 
-                        // PRIMERO: dibujar los lugares azules.
+                        // Fuente del lugar más cercano.
+                        cargado.addSource(
+                            GeoJsonSource(
+                                FUENTE_MAS_CERCANO,
+                                FeatureCollection.fromFeatures(emptyArray())
+                            )
+                        )
+
+                        // Lugares normales: azul.
                         cargado.addLayer(
                             SymbolLayer(
                                 "marcadores-lugares",
                                 FUENTE_LUGARES
                             ).withProperties(
                                 iconImage(ICONO_LUGAR),
-                                iconAnchor(
-                                    Property.ICON_ANCHOR_BOTTOM
-                                ),
+                                iconAnchor(Property.ICON_ANCHOR_BOTTOM),
                                 iconAllowOverlap(true),
                                 iconIgnorePlacement(true),
-
                                 textField("{nombre}"),
-                                textFont(
-                                    arrayOf("Noto Sans Regular")
-                                ),
+                                textFont(arrayOf("Noto Sans Regular")),
                                 textSize(11f),
-                                textColor(
-                                    Color.rgb(25, 118, 210)
-                                ),
+                                textColor(Color.rgb(25, 118, 210)),
                                 textHaloColor(Color.WHITE),
                                 textHaloWidth(2f),
-                                textAnchor(
-                                    Property.TEXT_ANCHOR_BOTTOM
-                                ),
+                                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
                                 textOffset(arrayOf(0f, -1.8f)),
                                 textAllowOverlap(false),
                                 textIgnorePlacement(false)
                             )
                         )
 
-                        // SEGUNDO: dibujar ubicación actual encima.
+                        // Lugar más cercano: verde.
+                        cargado.addLayer(
+                            SymbolLayer(
+                                "marcador-mas-cercano",
+                                FUENTE_MAS_CERCANO
+                            ).withProperties(
+                                iconImage(ICONO_MAS_CERCANO),
+                                iconAnchor(Property.ICON_ANCHOR_BOTTOM),
+                                iconAllowOverlap(true),
+                                iconIgnorePlacement(true),
+                                textField("{nombre}"),
+                                textFont(arrayOf("Noto Sans Regular")),
+                                textSize(12f),
+                                textColor(Color.rgb(46, 125, 50)),
+                                textHaloColor(Color.WHITE),
+                                textHaloWidth(2f),
+                                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
+                                textOffset(arrayOf(0f, -1.8f)),
+                                textAllowOverlap(true),
+                                textIgnorePlacement(true)
+                            )
+                        )
+
+                        // Ubicación actual: rojo.
                         cargado.addLayer(
                             SymbolLayer(
                                 "marcador-actual",
                                 FUENTE
                             ).withProperties(
                                 iconImage(ICONO),
-                                iconAnchor(
-                                    Property.ICON_ANCHOR_BOTTOM
-                                ),
+                                iconAnchor(Property.ICON_ANCHOR_BOTTOM),
                                 iconAllowOverlap(true),
                                 iconIgnorePlacement(true),
-
                                 textField("Estás aquí"),
-                                textFont(
-                                    arrayOf("Noto Sans Regular")
-                                ),
+                                textFont(arrayOf("Noto Sans Regular")),
                                 textSize(14f),
-                                textColor(
-                                    Color.rgb(24, 45, 43)
-                                ),
+                                textColor(Color.rgb(24, 45, 43)),
                                 textHaloColor(Color.WHITE),
                                 textHaloWidth(2f),
-                                textAnchor(
-                                    Property.TEXT_ANCHOR_BOTTOM
-                                ),
+                                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
                                 textOffset(arrayOf(0f, -3f)),
                                 textAllowOverlap(true),
                                 textIgnorePlacement(true)
@@ -280,10 +280,8 @@ fun MapaUbicacion(
 
         val observador =
             LifecycleEventObserver { _, evento ->
-
                 if (!destruido) {
                     when (evento) {
-
                         Lifecycle.Event.ON_START -> {
                             vista.onStart()
                             iniciado = true
@@ -295,45 +293,30 @@ fun MapaUbicacion(
                         }
 
                         Lifecycle.Event.ON_PAUSE -> pausar()
-
                         Lifecycle.Event.ON_STOP -> detener()
-
                         Lifecycle.Event.ON_DESTROY -> destruir()
-
                         else -> Unit
                     }
                 }
             }
 
         val memoria = object : ComponentCallbacks {
-
             override fun onConfigurationChanged(
                 newConfig: Configuration
             ) = Unit
 
             override fun onLowMemory() {
-                if (!destruido) {
-                    vista.onLowMemory()
-                }
+                if (!destruido) vista.onLowMemory()
             }
         }
 
-        contexto.applicationContext.registerComponentCallbacks(
-            memoria
-        )
-
+        contexto.applicationContext.registerComponentCallbacks(memoria)
         lifecycle.addObserver(observador)
 
         onDispose {
-
             lifecycle.removeObserver(observador)
-
-            contexto.applicationContext.unregisterComponentCallbacks(
-                memoria
-            )
-
+            contexto.applicationContext.unregisterComponentCallbacks(memoria)
             vista.removeOnDidFailLoadingMapListener(fallo)
-
             destruir()
         }
     }
@@ -345,9 +328,8 @@ fun MapaUbicacion(
             controlCamara.movidaPorUsuario = false
         }
 
-        val fuente = estilo?.getSourceAs<GeoJsonSource>(
-            FUENTE
-        ) ?: return@LaunchedEffect
+        val fuente = estilo?.getSourceAs<GeoJsonSource>(FUENTE)
+            ?: return@LaunchedEffect
 
         if (estado is UbicacionUi.Lista) {
 
@@ -361,15 +343,10 @@ fun MapaUbicacion(
             )
 
             if (!controlCamara.movidaPorUsuario) {
-
                 mapa?.cancelTransitions()
-
                 mapa?.animateCamera(
                     CameraUpdateFactory.newLatLngZoom(
-                        LatLng(
-                            posicion.latitud,
-                            posicion.longitud
-                        ),
+                        LatLng(posicion.latitud, posicion.longitud),
                         16.0
                     ),
                     1000
@@ -377,48 +354,65 @@ fun MapaUbicacion(
             }
 
         } else {
-
             fuente.setGeoJson(
-                FeatureCollection.fromFeatures(
-                    emptyArray()
-                )
+                FeatureCollection.fromFeatures(emptyArray())
             )
         }
     }
 
-    // Actualizar los cinco lugares.
-    LaunchedEffect(lugares, estilo) {
+    // Actualizar marcadores azules y verde.
+    LaunchedEffect(lugares, masCercanoId, estilo) {
 
-        val fuente = estilo?.getSourceAs<GeoJsonSource>(
+        val fuenteAzul = estilo?.getSourceAs<GeoJsonSource>(
             FUENTE_LUGARES
         ) ?: return@LaunchedEffect
 
-        val elementos = lugares.map { item ->
+        val fuenteVerde = estilo?.getSourceAs<GeoJsonSource>(
+            FUENTE_MAS_CERCANO
+        ) ?: return@LaunchedEffect
 
+        fun crearFeature(item: LugarConDistancia): Feature {
             val lugar = item.lugar
 
-            Feature.fromGeometry(
+            return Feature.fromGeometry(
                 Point.fromLngLat(
                     lugar.longitud,
                     lugar.latitud
                 )
             ).apply {
-                addStringProperty(
-                    "nombre",
-                    lugar.nombre
-                )
+                addStringProperty("nombre", lugar.nombre)
             }
         }
 
-        fuente.setGeoJson(
+        val restantes = lugares.filter {
+            it.lugar.id != masCercanoId
+        }
+
+        val cercano = lugares.firstOrNull {
+            it.lugar.id == masCercanoId
+        }
+
+        fuenteAzul.setGeoJson(
             FeatureCollection.fromFeatures(
-                elementos.toTypedArray()
+                restantes.map(::crearFeature).toTypedArray()
+            )
+        )
+
+        fuenteVerde.setGeoJson(
+            FeatureCollection.fromFeatures(
+                cercano?.let { arrayOf(crearFeature(it)) }
+                    ?: emptyArray()
             )
         )
     }
 
-    // Centrar el mapa en el lugar seleccionado.
-    LaunchedEffect(seleccionado, estilo, mapa) {
+    // Centrar la cámara en el lugar seleccionado.
+    LaunchedEffect(
+        seleccionado,
+        solicitudCentrar,
+        estilo,
+        mapa
+    ) {
 
         val id = seleccionado ?: return@LaunchedEffect
 
@@ -430,10 +424,7 @@ fun MapaUbicacion(
 
         mapa?.animateCamera(
             CameraUpdateFactory.newLatLngZoom(
-                LatLng(
-                    lugar.latitud,
-                    lugar.longitud
-                ),
+                LatLng(lugar.latitud, lugar.longitud),
                 17.0
             ),
             1000
@@ -448,7 +439,6 @@ fun MapaUbicacion(
         )
 
         if (errorMapa != null) {
-
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -456,16 +446,13 @@ fun MapaUbicacion(
                 color = MaterialTheme.colorScheme.errorContainer,
                 shape = MaterialTheme.shapes.medium
             ) {
-
                 Text(
                     errorMapa.orEmpty(),
                     Modifier.padding(12.dp),
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
-
         } else if (estilo == null) {
-
             CircularProgressIndicator(
                 Modifier.align(Alignment.Center)
             )
@@ -473,42 +460,23 @@ fun MapaUbicacion(
     }
 }
 
-// Marcador rojo de ubicación actual.
+// Marcador rojo: ubicación actual.
 private fun crearMarcadorRojo(): Bitmap {
-
-    val bitmap = Bitmap.createBitmap(
-        36,
-        48,
-        Bitmap.Config.ARGB_8888
-    )
-
-    val canvas = Canvas(bitmap)
-    val pintura = Paint(Paint.ANTI_ALIAS_FLAG)
-
-    val contorno = Path().apply {
-        moveTo(18f, 46f)
-        cubicTo(13f, 36f, 3f, 26f, 3f, 18f)
-        cubicTo(3f, -2f, 33f, -2f, 33f, 18f)
-        cubicTo(33f, 26f, 23f, 36f, 18f, 46f)
-        close()
-    }
-
-    pintura.color = Color.rgb(211, 47, 47)
-    canvas.drawPath(contorno, pintura)
-
-    pintura.color = Color.WHITE
-    pintura.style = Paint.Style.STROKE
-    pintura.strokeWidth = 2f
-    canvas.drawPath(contorno, pintura)
-
-    pintura.style = Paint.Style.FILL
-    canvas.drawCircle(18f, 17f, 5f, pintura)
-
-    return bitmap
+    return crearMarcador(Color.rgb(211, 47, 47))
 }
 
-// Marcador azul de lugares del campus.
+// Marcador azul: lugares del campus.
 private fun crearMarcadorAzul(): Bitmap {
+    return crearMarcador(Color.rgb(25, 118, 210))
+}
+
+// Marcador verde: lugar más cercano.
+private fun crearMarcadorVerde(): Bitmap {
+    return crearMarcador(Color.rgb(46, 160, 67))
+}
+
+// Construcción común de los marcadores.
+private fun crearMarcador(color: Int): Bitmap {
 
     val bitmap = Bitmap.createBitmap(
         36,
@@ -527,7 +495,7 @@ private fun crearMarcadorAzul(): Bitmap {
         close()
     }
 
-    pintura.color = Color.rgb(25, 118, 210)
+    pintura.color = color
     canvas.drawPath(contorno, pintura)
 
     pintura.color = Color.WHITE
