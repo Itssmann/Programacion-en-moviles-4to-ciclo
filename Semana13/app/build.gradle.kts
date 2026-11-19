@@ -1,19 +1,7 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
-
-val properties = Properties()
-val localProperties = rootProject.file("local.properties")
-
-if (localProperties.exists()) {
-    localProperties.inputStream().use {
-        properties.load(it)
-    }
-}
-val mapsApiKey = properties.getProperty("MAPS_API_KEY", "")
 
 android {
     namespace = "com.abad.campusgps"
@@ -31,7 +19,6 @@ android {
         testInstrumentationRunner =
             "androidx.test.runner.AndroidJUnitRunner"
 
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
@@ -61,7 +48,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
-    implementation("com.google.maps.android:maps-compose:6.12.0")
+    implementation(libs.maplibre.android.sdk)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
