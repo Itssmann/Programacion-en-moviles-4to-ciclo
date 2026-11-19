@@ -4,10 +4,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.abad.campusgps.data.LugaresRepository
+import com.abad.campusgps.data.UbicacionNoDisponibleException
 import com.abad.campusgps.data.UbicacionRepository
 import com.abad.campusgps.model.Lugar
 import com.abad.campusgps.model.LugarConDistancia
 import com.abad.campusgps.model.Posicion
+import com.abad.campusgps.model.TipoError
 import com.abad.campusgps.model.UbicacionUi
 import com.abad.campusgps.util.distanciaMetros
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,41 +45,73 @@ class MapaViewModel(
     val seleccionado: StateFlow<Int?> =
         _seleccionado.asStateFlow()
 
-    // Lugar más cercano al usuario.
     val masCercano: StateFlow<Lugar?> =
-        _lugares
-            .map { lista ->
-                lista.firstOrNull { it.metros != null }?.lugar
-            }
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
-                null
-            )
+        _lugares.map { lista ->
+            lista.firstOrNull { it.metros != null }?.lugar
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            null
+        )
 
-    // Evento para solicitar que el mapa centre el lugar.
     private val _solicitudCentrar = MutableStateFlow(0)
 
     val solicitudCentrar: StateFlow<Int> =
         _solicitudCentrar.asStateFlow()
 
     fun buscar() {
-        _estado.value = UbicacionUi.Buscando
-
         viewModelScope.launch {
+
+            if (!ubicacionRepo.playServicesDisponible()) {
+                _estado.value = UbicacionUi.Error(
+                    mensaje = "Este dispositivo no tiene Google Play Services.",
+                    tipo = TipoError.SIN_PLAY_SERVICES
+                )
+                return@launch
+            }
+
+            _estado.value = UbicacionUi.Buscando
+
             ubicacionRepo.obtenerPosicion()
-                .onSuccess {
-                    _estado.value = UbicacionUi.Lista(it)
-                    actualizarDistancias(it)
+                .onSuccess { posicion ->
+                    _estado.value = UbicacionUi.Lista(posicion)
+                    actualizarDistancias(posicion)
                 }
-                .onFailure {
-                    _estado.value = UbicacionUi.Error(mensajeDe(it))
+                .onFailure { error ->
+                    val tipo = when (error) {
+                        is SecurityException ->
+                            TipoError.SIN_PERMISO
+
+                        is UbicacionNoDisponibleException ->
+                            TipoError.GPS_APAGADO
+
+                        else ->
+                            TipoError.OTRO
+                    }
+
+                    val mensaje = when (tipo) {
+                        TipoError.SIN_PERMISO ->
+                            "No tienes permiso de ubicación."
+
+                        TipoError.GPS_APAGADO ->
+                            "Activa el GPS e intenta de nuevo."
+
+                        TipoError.SIN_PLAY_SERVICES ->
+                            "Este dispositivo no tiene Google Play Services."
+
+                        TipoError.OTRO ->
+                            error.message ?: "No se pudo obtener la ubicación."
+                    }
+
+                    _estado.value = UbicacionUi.Error(
+                        mensaje = mensaje,
+                        tipo = tipo
+                    )
                 }
         }
     }
 
     private fun actualizarDistancias(pos: Posicion) {
-
         _lugares.value = lugaresRepo.obtenerLugares()
             .map { lugar ->
                 LugarConDistancia(
@@ -107,25 +141,17 @@ class MapaViewModel(
         _seleccionado.value = id
     }
 
-    // Paso 7: ir al lugar más cercano.
     fun irAlMasCercano() {
         val lugar = masCercano.value ?: return
 
         _seleccionado.value = lugar.id
         _solicitudCentrar.value++
     }
+
     fun permisoDenegado() {
         _estado.value = UbicacionUi.Error(
-            "Sin permiso de ubicación no puedo mostrar dónde estás"
+            mensaje = "Sin permiso de ubicación. Puedes habilitarlo desde ajustes.",
+            tipo = TipoError.SIN_PERMISO
         )
     }
-
-    private fun mensajeDe(e: Throwable): String =
-        when (e) {
-            is SecurityException ->
-                "Falta el permiso de ubicación"
-
-            else ->
-                e.message ?: "No se pudo obtener la ubicación"
-        }
 }

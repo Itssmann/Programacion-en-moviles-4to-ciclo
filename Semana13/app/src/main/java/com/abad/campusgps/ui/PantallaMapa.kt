@@ -156,10 +156,11 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                         }
 
                         is UbicacionUi.Error -> {
-                            Text(
-                                text = actual.mensaje,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
+                            MensajeError(
+                                error = actual,
+                                onReintentar = {
+                                    viewModel.buscar()
+                                }
                             )
                         }
                     }
