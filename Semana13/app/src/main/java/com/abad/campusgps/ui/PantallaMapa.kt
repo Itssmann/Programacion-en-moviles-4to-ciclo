@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import com.abad.campusgps.model.UbicacionUi
 import com.abad.campusgps.viewmodel.MapaViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaMapa(viewModel: MapaViewModel) {
     val estado by viewModel.estado.collectAsState()
@@ -47,63 +48,75 @@ fun PantallaMapa(viewModel: MapaViewModel) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "CampusGPS",
-            style = MaterialTheme.typography.headlineMedium
-        )
+    val lugares by viewModel.lugares.collectAsState()
+    val seleccionado by viewModel.seleccionado.collectAsState()
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        when (val actual = estado) {
-            UbicacionUi.Inicial -> {
-                Text("Consulta tu ubicación actual")
-            }
-
-            UbicacionUi.Buscando -> {
-                CircularProgressIndicator()
-            }
-
-            is UbicacionUi.Lista -> {
-                Text("Latitud: ${actual.posicion.latitud}")
-                Text("Longitud: ${actual.posicion.longitud}")
-            }
-
-            is UbicacionUi.Error -> {
-                Text(
-                    text = actual.mensaje,
-                    color = MaterialTheme.colorScheme.error
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("CampusGPS") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
+            )
+        }
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            MapaUbicacion(
+                estado = estado,
+                lugares = lugares,
+                seleccionado = seleccionado,
+                modifier = Modifier.fillMaxWidth().weight(1f)
+            )
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            if (tienePermisoUbicacion()) {
+                                viewModel.buscar()
+                            } else {
+                                lanzadorPermisos.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
+                        },
+                        enabled = estado != UbicacionUi.Buscando
+                    ) {
+                        Text("Obtener mi ubicación")
+                    }
+
+                    when (val actual = estado) {
+                        UbicacionUi.Inicial -> {
+                            Text("Consulta tu ubicación actual")
+                        }
+
+                        UbicacionUi.Buscando -> {
+                            CircularProgressIndicator()
+                        }
+
+                        is UbicacionUi.Lista -> {
+                            Text("Latitud: ${actual.posicion.latitud}")
+                            Text("Longitud: ${actual.posicion.longitud}")
+                        }
+
+                        is UbicacionUi.Error -> {
+                            Text(
+                                text = actual.mensaje,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
-            onClick = {
-                if (tienePermisoUbicacion()) {
-                    viewModel.buscar()
-                } else {
-                    lanzadorPermisos.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                }
-            },
-            enabled = estado != UbicacionUi.Buscando
-        ) {
-            Text("Obtener mi ubicación")
-        }
-
-        // TODO Paso 3: mostrar el mapa con MapLibre
-        // TODO Paso 6: mostrar lista de lugares
     }
 }
