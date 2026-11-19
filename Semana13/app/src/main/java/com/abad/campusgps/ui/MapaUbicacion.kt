@@ -47,7 +47,7 @@ private const val FUENTE = "ubicacion-actual"
 private const val ICONO = "marcador-rojo"
 
 private const val FUENTE_LUGARES = "lugares-campus"
-private const val ICONO_LUGAR = "marcador-azul"
+private const val ICONO_LUGAR = "marcador-turquesa"
 
 private class ControlCamara {
     var movidaPorUsuario = false
@@ -176,12 +176,18 @@ fun MapaUbicacion(
 
                     if (!destruido) {
 
-                        // Marcador rojo de ubicación actual.
+                        // Registrar ambos iconos.
                         cargado.addImage(
                             ICONO,
                             crearMarcadorRojo()
                         )
 
+                        cargado.addImage(
+                            ICONO_LUGAR,
+                            crearMarcadorAzul()
+                        )
+
+                        // Crear fuente de ubicación actual.
                         cargado.addSource(
                             GeoJsonSource(
                                 FUENTE,
@@ -191,6 +197,49 @@ fun MapaUbicacion(
                             )
                         )
 
+                        // Crear fuente de lugares.
+                        cargado.addSource(
+                            GeoJsonSource(
+                                FUENTE_LUGARES,
+                                FeatureCollection.fromFeatures(
+                                    emptyArray()
+                                )
+                            )
+                        )
+
+                        // PRIMERO: dibujar los lugares azules.
+                        cargado.addLayer(
+                            SymbolLayer(
+                                "marcadores-lugares",
+                                FUENTE_LUGARES
+                            ).withProperties(
+                                iconImage(ICONO_LUGAR),
+                                iconAnchor(
+                                    Property.ICON_ANCHOR_BOTTOM
+                                ),
+                                iconAllowOverlap(true),
+                                iconIgnorePlacement(true),
+
+                                textField("{nombre}"),
+                                textFont(
+                                    arrayOf("Noto Sans Regular")
+                                ),
+                                textSize(11f),
+                                textColor(
+                                    Color.rgb(25, 118, 210)
+                                ),
+                                textHaloColor(Color.WHITE),
+                                textHaloWidth(2f),
+                                textAnchor(
+                                    Property.TEXT_ANCHOR_BOTTOM
+                                ),
+                                textOffset(arrayOf(0f, -1.8f)),
+                                textAllowOverlap(false),
+                                textIgnorePlacement(false)
+                            )
+                        )
+
+                        // SEGUNDO: dibujar ubicación actual encima.
                         cargado.addLayer(
                             SymbolLayer(
                                 "marcador-actual",
@@ -202,6 +251,7 @@ fun MapaUbicacion(
                                 ),
                                 iconAllowOverlap(true),
                                 iconIgnorePlacement(true),
+
                                 textField("Estás aquí"),
                                 textFont(
                                     arrayOf("Noto Sans Regular")
@@ -218,53 +268,6 @@ fun MapaUbicacion(
                                 textOffset(arrayOf(0f, -3f)),
                                 textAllowOverlap(true),
                                 textIgnorePlacement(true)
-                            )
-                        )
-
-                        // Marcadores azules de los lugares.
-                        cargado.addImage(
-                            ICONO_LUGAR,
-                            crearMarcadorAzul()
-                        )
-
-                        cargado.addSource(
-                            GeoJsonSource(
-                                FUENTE_LUGARES,
-                                FeatureCollection.fromFeatures(
-                                    emptyArray()
-                                )
-                            )
-                        )
-
-                        cargado.addLayer(
-                            SymbolLayer(
-                                "marcadores-lugares",
-                                FUENTE_LUGARES
-                            ).withProperties(
-                                iconImage(ICONO_LUGAR),
-                                iconSize(1.35f),
-                                iconAnchor(
-                                    Property.ICON_ANCHOR_BOTTOM
-                                ),
-                                iconAllowOverlap(true),
-                                iconIgnorePlacement(true),
-
-                                textField("{nombre}"),
-                                textFont(
-                                    arrayOf("Noto Sans Regular")
-                                ),
-                                textSize(11f),
-                                textColor(
-                                    Color.rgb(21, 101, 192)
-                                ),
-                                textHaloColor(Color.WHITE),
-                                textHaloWidth(2f),
-                                textAnchor(
-                                    Property.TEXT_ANCHOR_BOTTOM
-                                ),
-                                textOffset(arrayOf(0f, -2.4f)),
-                                textAllowOverlap(false),
-                                textIgnorePlacement(false)
                             )
                         )
 
@@ -383,7 +386,7 @@ fun MapaUbicacion(
         }
     }
 
-    // Actualizar los cinco lugares del campus.
+    // Actualizar los cinco lugares.
     LaunchedEffect(lugares, estilo) {
 
         val fuente = estilo?.getSourceAs<GeoJsonSource>(
@@ -447,7 +450,7 @@ fun MapaUbicacion(
     }
 }
 
-// Marcador rojo: ubicación actual.
+// Marcador rojo de ubicación actual.
 private fun crearMarcadorRojo(): Bitmap {
 
     val bitmap = Bitmap.createBitmap(
@@ -460,38 +463,28 @@ private fun crearMarcadorRojo(): Bitmap {
     val pintura = Paint(Paint.ANTI_ALIAS_FLAG)
 
     val contorno = Path().apply {
-
         moveTo(18f, 46f)
         cubicTo(13f, 36f, 3f, 26f, 3f, 18f)
         cubicTo(3f, -2f, 33f, -2f, 33f, 18f)
         cubicTo(33f, 26f, 23f, 36f, 18f, 46f)
-
         close()
     }
 
     pintura.color = Color.rgb(211, 47, 47)
-
     canvas.drawPath(contorno, pintura)
 
     pintura.color = Color.WHITE
     pintura.style = Paint.Style.STROKE
     pintura.strokeWidth = 2f
-
     canvas.drawPath(contorno, pintura)
 
     pintura.style = Paint.Style.FILL
-
-    canvas.drawCircle(
-        18f,
-        17f,
-        5f,
-        pintura
-    )
+    canvas.drawCircle(18f, 17f, 5f, pintura)
 
     return bitmap
 }
 
-// Marcador azul: lugares del campus.
+// Marcador azul de lugares del campus.
 private fun crearMarcadorAzul(): Bitmap {
 
     val bitmap = Bitmap.createBitmap(
@@ -504,33 +497,23 @@ private fun crearMarcadorAzul(): Bitmap {
     val pintura = Paint(Paint.ANTI_ALIAS_FLAG)
 
     val contorno = Path().apply {
-
         moveTo(18f, 46f)
         cubicTo(13f, 36f, 3f, 26f, 3f, 18f)
         cubicTo(3f, -2f, 33f, -2f, 33f, 18f)
         cubicTo(33f, 26f, 23f, 36f, 18f, 46f)
-
         close()
     }
 
     pintura.color = Color.rgb(25, 118, 210)
-
     canvas.drawPath(contorno, pintura)
 
     pintura.color = Color.WHITE
     pintura.style = Paint.Style.STROKE
     pintura.strokeWidth = 2f
-
     canvas.drawPath(contorno, pintura)
 
     pintura.style = Paint.Style.FILL
-
-    canvas.drawCircle(
-        18f,
-        17f,
-        5f,
-        pintura
-    )
+    canvas.drawCircle(18f, 17f, 5f, pintura)
 
     return bitmap
 }

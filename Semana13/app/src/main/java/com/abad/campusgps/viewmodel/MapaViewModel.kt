@@ -5,11 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.abad.campusgps.data.LugaresRepository
 import com.abad.campusgps.data.UbicacionRepository
 import com.abad.campusgps.model.LugarConDistancia
+import com.abad.campusgps.model.Posicion
 import com.abad.campusgps.model.UbicacionUi
+import com.abad.campusgps.util.distanciaMetros
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 
 class MapaViewModel(
     private val ubicacionRepo: UbicacionRepository,
@@ -44,12 +47,38 @@ class MapaViewModel(
                 .onSuccess {
                     _estado.value = UbicacionUi.Lista(it)
 
-                    // TODO Paso 6:
-                    // Actualizar y ordenar las distancias
+                    // Calcular y ordenar las distancias.
+                    actualizarDistancias(it)
                 }
                 .onFailure {
                     _estado.value = UbicacionUi.Error(mensajeDe(it))
                 }
+        }
+    }
+
+    private fun actualizarDistancias(pos: Posicion) {
+        _lugares.value = lugaresRepo.obtenerLugares()
+            .map { lugar ->
+                LugarConDistancia(
+                    lugar = lugar,
+                    metros = distanciaMetros(
+                        desde = pos,
+                        hasta = Posicion(
+                            latitud = lugar.latitud,
+                            longitud = lugar.longitud
+                        )
+                    )
+                )
+            }
+            .sortedBy { it.metros }
+
+        Log.d("CampusGPS", "Lugares ordenados por distancia:")
+
+        _lugares.value.forEach { item ->
+            Log.d(
+                "CampusGPS",
+                "${item.lugar.nombre}: ${item.metros} metros"
+            )
         }
     }
 
