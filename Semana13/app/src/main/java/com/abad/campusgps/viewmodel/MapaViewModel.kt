@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.abad.campusgps.data.LugaresRepository
+import com.abad.campusgps.data.PreferenciasRepository
 import com.abad.campusgps.data.UbicacionNoDisponibleException
 import com.abad.campusgps.data.UbicacionRepository
 import com.abad.campusgps.model.Lugar
@@ -23,7 +24,8 @@ import kotlinx.coroutines.launch
 
 class MapaViewModel(
     private val ubicacionRepo: UbicacionRepository,
-    private val lugaresRepo: LugaresRepository
+    private val lugaresRepo: LugaresRepository,
+    private val preferenciasRepo: PreferenciasRepository
 ) : ViewModel() {
 
     private val _estado =
@@ -62,10 +64,12 @@ class MapaViewModel(
             _lugares.value
         )
 
-    private val _seleccionado = MutableStateFlow<Int?>(null)
-
     val seleccionado: StateFlow<Int?> =
-        _seleccionado.asStateFlow()
+        preferenciasRepo.lugarSeleccionado.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            null
+        )
 
     val masCercano: StateFlow<Lugar?> =
         lugaresFiltrados.map { lista ->
@@ -168,13 +172,15 @@ class MapaViewModel(
     }
 
     fun seleccionar(id: Int?) {
-        _seleccionado.value = id
+        viewModelScope.launch {
+            preferenciasRepo.guardarLugarSeleccionado(id)
+        }
     }
 
     fun irAlMasCercano() {
         val lugar = masCercano.value ?: return
 
-        _seleccionado.value = lugar.id
+        seleccionar(lugar.id)
         _solicitudCentrar.value++
     }
 

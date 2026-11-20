@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -43,8 +44,10 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 
-private const val ESTILO =
+private const val ESTILO_LIBERTY =
     "https://tiles.openfreemap.org/styles/liberty"
+private const val ESTILO_DARK =
+    "https://tiles.openfreemap.org/styles/dark"
 
 private const val FUENTE = "ubicacion-actual"
 private const val ICONO = "marcador-rojo"
@@ -75,6 +78,8 @@ fun MapaUbicacion(
 ) {
     val contexto = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val esOscuro = isSystemInDarkTheme()
+    val estiloUrl = if (esOscuro) ESTILO_DARK else ESTILO_LIBERTY
 
     val vista = remember(contexto) {
         MapLibre.getInstance(contexto)
@@ -170,148 +175,6 @@ fun MapaUbicacion(
                         .target(LatLng(-12.0464, -77.0428))
                         .zoom(12.0)
                         .build()
-
-                disponible.setStyle(
-                    org.maplibre.android.maps.Style.Builder()
-                        .fromUri(ESTILO)
-                ) { cargado ->
-
-                    if (!destruido) {
-
-                        // Registrar los tres marcadores.
-                        cargado.addImage(ICONO, crearMarcadorRojo())
-                        cargado.addImage(ICONO_LUGAR, crearMarcadorAzul())
-                        cargado.addImage(
-                            ICONO_MAS_CERCANO,
-                            crearMarcadorVerde()
-                        )
-
-                        // Fuente de ubicación actual.
-                        cargado.addSource(
-                            GeoJsonSource(
-                                FUENTE,
-                                FeatureCollection.fromFeatures(emptyArray())
-                            )
-                        )
-
-                        // Fuente de lugares azules.
-                        cargado.addSource(
-                            GeoJsonSource(
-                                FUENTE_LUGARES,
-                                FeatureCollection.fromFeatures(emptyArray())
-                            )
-                        )
-
-                        // Fuente del lugar más cercano.
-                        cargado.addSource(
-                            GeoJsonSource(
-                                FUENTE_MAS_CERCANO,
-                                FeatureCollection.fromFeatures(emptyArray())
-                            )
-                        )
-
-                        // Fuente del radio de cercanía.
-                        cargado.addSource(
-                            GeoJsonSource(
-                                FUENTE_RADIO,
-                                FeatureCollection.fromFeatures(emptyArray())
-                            )
-                        )
-
-                        // Capas para dibujar el radio de cercanía debajo de los marcadores.
-                        cargado.addLayer(
-                            FillLayer(
-                                CAPA_RADIO_RELLENO,
-                                FUENTE_RADIO
-                            ).withProperties(
-                                fillColor(Color.argb(40, 33, 150, 243)),
-                                fillOpacity(0.6f)
-                            )
-                        )
-
-                        cargado.addLayer(
-                            LineLayer(
-                                CAPA_RADIO_LINEA,
-                                FUENTE_RADIO
-                            ).withProperties(
-                                lineColor(Color.rgb(25, 118, 210)),
-                                lineWidth(2f)
-                            )
-                        )
-
-                        // Lugares normales: azul.
-                        cargado.addLayer(
-                            SymbolLayer(
-                                "marcadores-lugares",
-                                FUENTE_LUGARES
-                            ).withProperties(
-                                iconImage(ICONO_LUGAR),
-                                iconAnchor(Property.ICON_ANCHOR_BOTTOM),
-                                iconAllowOverlap(true),
-                                iconIgnorePlacement(true),
-                                textField("{nombre}"),
-                                textFont(arrayOf("Noto Sans Regular")),
-                                textSize(11f),
-                                textColor(Color.rgb(25, 118, 210)),
-                                textHaloColor(Color.WHITE),
-                                textHaloWidth(2f),
-                                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                                textOffset(arrayOf(0f, -1.8f)),
-                                textAllowOverlap(false),
-                                textIgnorePlacement(false)
-                            )
-                        )
-
-                        // Lugar más cercano: verde.
-                        cargado.addLayer(
-                            SymbolLayer(
-                                "marcador-mas-cercano",
-                                FUENTE_MAS_CERCANO
-                            ).withProperties(
-                                iconImage(ICONO_MAS_CERCANO),
-                                iconAnchor(Property.ICON_ANCHOR_BOTTOM),
-                                iconAllowOverlap(true),
-                                iconIgnorePlacement(true),
-                                textField("{nombre}"),
-                                textFont(arrayOf("Noto Sans Regular")),
-                                textSize(12f),
-                                textColor(Color.rgb(46, 125, 50)),
-                                textHaloColor(Color.WHITE),
-                                textHaloWidth(2f),
-                                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                                textOffset(arrayOf(0f, -1.8f)),
-                                textAllowOverlap(true),
-                                textIgnorePlacement(true)
-                            )
-                        )
-
-                        // Ubicación actual: rojo.
-                        cargado.addLayer(
-                            SymbolLayer(
-                                "marcador-actual",
-                                FUENTE
-                            ).withProperties(
-                                iconImage(ICONO),
-                                iconAnchor(Property.ICON_ANCHOR_BOTTOM),
-                                iconAllowOverlap(true),
-                                iconIgnorePlacement(true),
-                                textField("Estás aquí"),
-                                textFont(arrayOf("Noto Sans Regular")),
-                                textSize(14f),
-                                textColor(Color.rgb(24, 45, 43)),
-                                textHaloColor(Color.WHITE),
-                                textHaloWidth(2f),
-                                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                                textOffset(arrayOf(0f, -3f)),
-                                textAllowOverlap(true),
-                                textIgnorePlacement(true)
-                            )
-                        )
-
-                        errorMapa = null
-                        estilo = cargado
-                    }
-                }
             }
         }
 
@@ -355,6 +218,150 @@ fun MapaUbicacion(
             contexto.applicationContext.unregisterComponentCallbacks(memoria)
             vista.removeOnDidFailLoadingMapListener(fallo)
             destruir()
+        }
+    }
+
+    // Cargar o actualizar el estilo del mapa (Liberty o Dark)
+    LaunchedEffect(estiloUrl, mapa) {
+        val map = mapa ?: return@LaunchedEffect
+        estilo = null
+
+        map.setStyle(
+            org.maplibre.android.maps.Style.Builder()
+                .fromUri(estiloUrl)
+        ) { cargado ->
+            // Registrar los tres marcadores.
+            cargado.addImage(ICONO, crearMarcadorRojo())
+            cargado.addImage(ICONO_LUGAR, crearMarcadorAzul())
+            cargado.addImage(
+                ICONO_MAS_CERCANO,
+                crearMarcadorVerde()
+            )
+
+            // Fuente de ubicación actual.
+            cargado.addSource(
+                GeoJsonSource(
+                    FUENTE,
+                    FeatureCollection.fromFeatures(emptyArray())
+                )
+            )
+
+            // Fuente de lugares azules.
+            cargado.addSource(
+                GeoJsonSource(
+                    FUENTE_LUGARES,
+                    FeatureCollection.fromFeatures(emptyArray())
+                )
+            )
+
+            // Fuente del lugar más cercano.
+            cargado.addSource(
+                GeoJsonSource(
+                    FUENTE_MAS_CERCANO,
+                    FeatureCollection.fromFeatures(emptyArray())
+                )
+            )
+
+            // Fuente del radio de cercanía.
+            cargado.addSource(
+                GeoJsonSource(
+                    FUENTE_RADIO,
+                    FeatureCollection.fromFeatures(emptyArray())
+                )
+            )
+
+            // Capas para dibujar el radio de cercanía debajo de los marcadores.
+            cargado.addLayer(
+                FillLayer(
+                    CAPA_RADIO_RELLENO,
+                    FUENTE_RADIO
+                ).withProperties(
+                    fillColor(Color.argb(40, 33, 150, 243)),
+                    fillOpacity(0.6f)
+                )
+            )
+
+            cargado.addLayer(
+                LineLayer(
+                    CAPA_RADIO_LINEA,
+                    FUENTE_RADIO
+                ).withProperties(
+                    lineColor(Color.rgb(25, 118, 210)),
+                    lineWidth(2f)
+                )
+            )
+
+            // Lugares normales: azul.
+            cargado.addLayer(
+                SymbolLayer(
+                    "marcadores-lugares",
+                    FUENTE_LUGARES
+                ).withProperties(
+                    iconImage(ICONO_LUGAR),
+                    iconAnchor(Property.ICON_ANCHOR_BOTTOM),
+                    iconAllowOverlap(true),
+                    iconIgnorePlacement(true),
+                    textField("{nombre}"),
+                    textFont(arrayOf("Noto Sans Regular")),
+                    textSize(11f),
+                    textColor(Color.rgb(25, 118, 210)),
+                    textHaloColor(Color.WHITE),
+                    textHaloWidth(2f),
+                    textAnchor(Property.TEXT_ANCHOR_BOTTOM),
+                    textOffset(arrayOf(0f, -1.8f)),
+                    textAllowOverlap(false),
+                    textIgnorePlacement(false)
+                )
+            )
+
+            // Lugar más cercano: verde.
+            cargado.addLayer(
+                SymbolLayer(
+                    "marcador-mas-cercano",
+                    FUENTE_MAS_CERCANO
+                ).withProperties(
+                    iconImage(ICONO_MAS_CERCANO),
+                    iconAnchor(Property.ICON_ANCHOR_BOTTOM),
+                    iconAllowOverlap(true),
+                    iconIgnorePlacement(true),
+                    textField("{nombre}"),
+                    textFont(arrayOf("Noto Sans Regular")),
+                    textSize(12f),
+                    textColor(Color.rgb(46, 125, 50)),
+                    textHaloColor(Color.WHITE),
+                    textHaloWidth(2f),
+                    textAnchor(Property.TEXT_ANCHOR_BOTTOM),
+                    textOffset(arrayOf(0f, -1.8f)),
+                    textAllowOverlap(true),
+                    textIgnorePlacement(true)
+                )
+            )
+
+            // Ubicación actual: rojo.
+            cargado.addLayer(
+                SymbolLayer(
+                    "marcador-actual",
+                    FUENTE
+                ).withProperties(
+                    iconImage(ICONO),
+                    iconAnchor(Property.ICON_ANCHOR_BOTTOM),
+                    iconAllowOverlap(true),
+                    iconIgnorePlacement(true),
+                    textField("Estás aquí"),
+                    textFont(arrayOf("Noto Sans Regular")),
+                    textSize(14f),
+                    textColor(Color.rgb(24, 45, 43)),
+                    textHaloColor(Color.WHITE),
+                    textHaloWidth(2f),
+                    textAnchor(Property.TEXT_ANCHOR_BOTTOM),
+                    textOffset(arrayOf(0f, -3f)),
+                    textAllowOverlap(true),
+                    textIgnorePlacement(true)
+                )
+            )
+
+            errorMapa = null
+            estilo = cargado
         }
     }
 

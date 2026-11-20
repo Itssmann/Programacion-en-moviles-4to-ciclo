@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.abad.campusgps.data.LugaresRepositoryLocal
+import com.abad.campusgps.data.PreferenciasRepositoryDataStore
 import com.abad.campusgps.data.UbicacionRepositoryGoogle
 import com.abad.campusgps.ui.PantallaMapa
 import com.abad.campusgps.ui.theme.CampusGPSTheme
@@ -18,10 +19,12 @@ class MainActivity : ComponentActivity() {
 
         val ubicacionRepo = UbicacionRepositoryGoogle(applicationContext)
         val lugaresRepo = LugaresRepositoryLocal()
+        val preferenciasRepo = PreferenciasRepositoryDataStore(applicationContext)
 
         val factory = CampusViewModelFactory(
             ubicacionRepo = ubicacionRepo,
-            lugaresRepo = lugaresRepo
+            lugaresRepo = lugaresRepo,
+            preferenciasRepo = preferenciasRepo
         )
 
         setContent {
