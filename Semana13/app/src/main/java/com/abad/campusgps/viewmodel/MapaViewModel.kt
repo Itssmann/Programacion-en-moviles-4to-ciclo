@@ -180,7 +180,11 @@ class MapaViewModel(
     fun irAlMasCercano() {
         val lugar = masCercano.value ?: return
 
-        seleccionar(lugar.id)
+        centrarLugar(lugar.id)
+    }
+
+    fun centrarLugar(id: Int) {
+        seleccionar(id)
         _solicitudCentrar.value++
     }
 

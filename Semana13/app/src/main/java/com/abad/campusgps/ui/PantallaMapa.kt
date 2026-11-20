@@ -34,6 +34,12 @@ fun PantallaMapa(viewModel: MapaViewModel) {
     val masCercano by viewModel.masCercano.collectAsState()
     val solicitudCentrar by viewModel.solicitudCentrar.collectAsState()
 
+    var fichaId by remember { mutableStateOf<Int?>(null) }
+    val ficha = lugaresFiltrados.firstOrNull { it.lugar.id == fichaId }
+    LaunchedEffect(fichaId, ficha) {
+        if (ficha == null) fichaId = null
+    }
+
     val contexto = LocalContext.current
 
     fun tienePermisoUbicacion(): Boolean {
@@ -237,7 +243,7 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                     ListaLugares(
                         lugares = lugaresFiltrados,
                         seleccionado = seleccionado,
-                        onSeleccionar = { viewModel.seleccionar(it) }
+                        onSeleccionar = { fichaId = it }
                     )
                 }
             }
@@ -255,6 +261,16 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                 }
             }
         }
+    }
+    if (ficha != null) {
+        FichaLugar(
+            item = ficha,
+            onCerrar = { fichaId = null },
+            onVerMapa = {
+                fichaId = null
+                viewModel.centrarLugar(ficha.lugar.id)
+            }
+        )
     }
 }
 
