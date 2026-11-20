@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +23,9 @@ import com.abad.campusgps.viewmodel.MapaViewModel
 fun PantallaMapa(viewModel: MapaViewModel) {
 
     val estado by viewModel.estado.collectAsState()
-    val lugares by viewModel.lugares.collectAsState()
+    val lugaresFiltrados by viewModel.lugaresFiltrados.collectAsState()
+    val categoriaSeleccionada by viewModel.categoriaSeleccionada.collectAsState()
+    val radioSeleccionado by viewModel.radioSeleccionado.collectAsState()
     val seleccionado by viewModel.seleccionado.collectAsState()
     val masCercano by viewModel.masCercano.collectAsState()
     val solicitudCentrar by viewModel.solicitudCentrar.collectAsState()
@@ -58,7 +62,7 @@ fun PantallaMapa(viewModel: MapaViewModel) {
     }
 
     val distanciaMasCercano = masCercano?.let { lugar ->
-        lugares.firstOrNull { it.lugar.id == lugar.id }?.metros
+        lugaresFiltrados.firstOrNull { it.lugar.id == lugar.id }?.metros
     }
 
     Scaffold(
@@ -84,10 +88,11 @@ fun PantallaMapa(viewModel: MapaViewModel) {
             // Mapa superior.
             MapaUbicacion(
                 estado = estado,
-                lugares = lugares,
+                lugares = lugaresFiltrados,
                 seleccionado = seleccionado,
                 masCercanoId = masCercano?.id,
                 solicitudCentrar = solicitudCentrar,
+                radioMetros = radioSeleccionado,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -104,10 +109,11 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                         .fillMaxWidth()
                         .padding(
                             horizontal = 16.dp,
-                            vertical = 10.dp
-                        ),
+                            vertical = 8.dp
+                        )
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
 
                     Button(
@@ -185,21 +191,50 @@ fun PantallaMapa(viewModel: MapaViewModel) {
                         )
                     }
 
+                    // Filtros por Categoría.
+                    Text(
+                        text = "Categoría:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    FiltroCategorias(
+                        categoriaSeleccionada = categoriaSeleccionada,
+                        onSeleccionarCategoria = { cat ->
+                            viewModel.seleccionarCategoria(cat)
+                        }
+                    )
+
+                    // Filtros por Radio de cercanía.
+                    Text(
+                        text = "Radio de cercanía:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    FiltroRadio(
+                        radioSeleccionado = radioSeleccionado,
+                        onSeleccionarRadio = { radio ->
+                            viewModel.seleccionarRadio(radio)
+                        }
+                    )
+
                     Text(
                         text = "Lugares cercanos",
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.Start)
                     )
 
                     ListaLugares(
-                        lugares = lugares,
+                        lugares = lugaresFiltrados,
                         seleccionado = seleccionado,
                         onSeleccionar = { id ->
                             viewModel.seleccionar(id)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(125.dp)
+                            .height(130.dp)
                     )
                 }
             }

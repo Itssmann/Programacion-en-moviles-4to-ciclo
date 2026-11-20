@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -40,13 +41,34 @@ class MapaViewModel(
     val lugares: StateFlow<List<LugarConDistancia>> =
         _lugares.asStateFlow()
 
+    private val _categoriaSeleccionada = MutableStateFlow<String?>(null)
+    val categoriaSeleccionada: StateFlow<String?> =
+        _categoriaSeleccionada.asStateFlow()
+
+    private val _radioSeleccionado = MutableStateFlow<Int?>(null)
+    val radioSeleccionado: StateFlow<Int?> =
+        _radioSeleccionado.asStateFlow()
+
+    val lugaresFiltrados: StateFlow<List<LugarConDistancia>> =
+        combine(_lugares, _categoriaSeleccionada, _radioSeleccionado) { lista, cat, radio ->
+            lista.filter { item ->
+                val cumpleCategoria = (cat == null || item.lugar.categoria.equals(cat, ignoreCase = true))
+                val cumpleRadio = (radio == null || (item.metros != null && item.metros <= radio))
+                cumpleCategoria && cumpleRadio
+            }
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            _lugares.value
+        )
+
     private val _seleccionado = MutableStateFlow<Int?>(null)
 
     val seleccionado: StateFlow<Int?> =
         _seleccionado.asStateFlow()
 
     val masCercano: StateFlow<Lugar?> =
-        _lugares.map { lista ->
+        lugaresFiltrados.map { lista ->
             lista.firstOrNull { it.metros != null }?.lugar
         }.stateIn(
             viewModelScope,
@@ -135,6 +157,14 @@ class MapaViewModel(
                 "${item.lugar.nombre}: ${item.metros} metros"
             )
         }
+    }
+
+    fun seleccionarCategoria(categoria: String?) {
+        _categoriaSeleccionada.value = categoria
+    }
+
+    fun seleccionarRadio(radio: Int?) {
+        _radioSeleccionado.value = radio
     }
 
     fun seleccionar(id: Int?) {

@@ -25,6 +25,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.abad.campusgps.model.LugarConDistancia
 import com.abad.campusgps.model.UbicacionUi
+import com.abad.campusgps.util.crearPoligonoCirculo
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -32,6 +33,8 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapLibreMapOptions
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.style.layers.FillLayer
+import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.*
 import org.maplibre.android.style.layers.SymbolLayer
@@ -52,6 +55,10 @@ private const val ICONO_LUGAR = "marcador-azul"
 private const val FUENTE_MAS_CERCANO = "lugar-mas-cercano"
 private const val ICONO_MAS_CERCANO = "marcador-verde"
 
+private const val FUENTE_RADIO = "radio-cercania"
+private const val CAPA_RADIO_RELLENO = "capa-radio-relleno"
+private const val CAPA_RADIO_LINEA = "capa-radio-linea"
+
 private class ControlCamara {
     var movidaPorUsuario = false
 }
@@ -63,6 +70,7 @@ fun MapaUbicacion(
     seleccionado: Int?,
     masCercanoId: Int?,
     solicitudCentrar: Int,
+    radioMetros: Int? = null,
     modifier: Modifier = Modifier
 ) {
     val contexto = LocalContext.current
@@ -199,6 +207,35 @@ fun MapaUbicacion(
                             GeoJsonSource(
                                 FUENTE_MAS_CERCANO,
                                 FeatureCollection.fromFeatures(emptyArray())
+                            )
+                        )
+
+                        // Fuente del radio de cercanía.
+                        cargado.addSource(
+                            GeoJsonSource(
+                                FUENTE_RADIO,
+                                FeatureCollection.fromFeatures(emptyArray())
+                            )
+                        )
+
+                        // Capas para dibujar el radio de cercanía debajo de los marcadores.
+                        cargado.addLayer(
+                            FillLayer(
+                                CAPA_RADIO_RELLENO,
+                                FUENTE_RADIO
+                            ).withProperties(
+                                fillColor(Color.argb(40, 33, 150, 243)),
+                                fillOpacity(0.6f)
+                            )
+                        )
+
+                        cargado.addLayer(
+                            LineLayer(
+                                CAPA_RADIO_LINEA,
+                                FUENTE_RADIO
+                            ).withProperties(
+                                lineColor(Color.rgb(25, 118, 210)),
+                                lineWidth(2f)
                             )
                         )
 
@@ -355,6 +392,24 @@ fun MapaUbicacion(
 
         } else {
             fuente.setGeoJson(
+                FeatureCollection.fromFeatures(emptyArray())
+            )
+        }
+    }
+
+    // Actualizar polígono del radio de cercanía.
+    LaunchedEffect(estado, radioMetros, estilo) {
+        val fuenteRadio = estilo?.getSourceAs<GeoJsonSource>(FUENTE_RADIO)
+            ?: return@LaunchedEffect
+
+        if (estado is UbicacionUi.Lista && radioMetros != null) {
+            val poligono = crearPoligonoCirculo(
+                centro = estado.posicion,
+                radioMetros = radioMetros.toFloat()
+            )
+            fuenteRadio.setGeoJson(Feature.fromGeometry(poligono))
+        } else {
+            fuenteRadio.setGeoJson(
                 FeatureCollection.fromFeatures(emptyArray())
             )
         }
