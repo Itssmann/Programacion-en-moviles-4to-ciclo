@@ -298,6 +298,7 @@ fun MapaUbicacion(
                     FUENTE_LUGARES
                 ).withProperties(
                     iconImage(ICONO_LUGAR),
+                    iconSize(1.35f),
                     iconAnchor(Property.ICON_ANCHOR_BOTTOM),
                     iconAllowOverlap(true),
                     iconIgnorePlacement(true),
@@ -308,9 +309,9 @@ fun MapaUbicacion(
                     textHaloColor(Color.WHITE),
                     textHaloWidth(2f),
                     textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                    textOffset(arrayOf(0f, -1.8f)),
+                    textOffset(arrayOf(0f, -5.7f)),
                     textAllowOverlap(false),
-                    textIgnorePlacement(false)
+                    textOptional(true)
                 )
             )
 
@@ -321,6 +322,7 @@ fun MapaUbicacion(
                     FUENTE_MAS_CERCANO
                 ).withProperties(
                     iconImage(ICONO_MAS_CERCANO),
+                    iconSize(1.35f),
                     iconAnchor(Property.ICON_ANCHOR_BOTTOM),
                     iconAllowOverlap(true),
                     iconIgnorePlacement(true),
@@ -331,9 +333,9 @@ fun MapaUbicacion(
                     textHaloColor(Color.WHITE),
                     textHaloWidth(2f),
                     textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                    textOffset(arrayOf(0f, -1.8f)),
-                    textAllowOverlap(true),
-                    textIgnorePlacement(true)
+                    textOffset(arrayOf(0f, -5.25f)),
+                    textAllowOverlap(false),
+                    textOptional(true)
                 )
             )
 
@@ -344,19 +346,20 @@ fun MapaUbicacion(
                     FUENTE
                 ).withProperties(
                     iconImage(ICONO),
+                    iconSize(1.6f),
                     iconAnchor(Property.ICON_ANCHOR_BOTTOM),
                     iconAllowOverlap(true),
                     iconIgnorePlacement(true),
                     textField("Estás aquí"),
                     textFont(arrayOf("Noto Sans Regular")),
-                    textSize(14f),
+                    textSize(12f),
                     textColor(Color.rgb(24, 45, 43)),
                     textHaloColor(Color.WHITE),
-                    textHaloWidth(2f),
-                    textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                    textOffset(arrayOf(0f, -3f)),
-                    textAllowOverlap(true),
-                    textIgnorePlacement(true)
+                    textHaloWidth(1.75f),
+                    textAnchor(Property.TEXT_ANCHOR_TOP),
+                    textOffset(arrayOf(0f, 0.4f)),
+                    textAllowOverlap(false),
+                    textOptional(true)
                 )
             )
 
@@ -524,7 +527,7 @@ fun MapaUbicacion(
 
 // Marcador rojo: ubicación actual.
 private fun crearMarcadorRojo(): Bitmap {
-    return crearMarcador(Color.rgb(211, 47, 47))
+    return crearMarcador(Color.rgb(211, 47, 47), destacar = true)
 }
 
 // Marcador azul: lugares del campus.
@@ -538,7 +541,7 @@ private fun crearMarcadorVerde(): Bitmap {
 }
 
 // Construcción común de los marcadores.
-private fun crearMarcador(color: Int): Bitmap {
+private fun crearMarcador(color: Int, destacar: Boolean = false): Bitmap {
 
     val bitmap = Bitmap.createBitmap(
         36,
@@ -562,11 +565,15 @@ private fun crearMarcador(color: Int): Bitmap {
 
     pintura.color = Color.WHITE
     pintura.style = Paint.Style.STROKE
-    pintura.strokeWidth = 2f
+    pintura.strokeWidth = if (destacar) 3f else 2f
     canvas.drawPath(contorno, pintura)
 
     pintura.style = Paint.Style.FILL
-    canvas.drawCircle(18f, 17f, 5f, pintura)
+    canvas.drawCircle(18f, 17f, if (destacar) 7f else 5f, pintura)
+    if (destacar) {
+        pintura.color = color
+        canvas.drawCircle(18f, 17f, 3f, pintura)
+    }
 
     return bitmap
 }

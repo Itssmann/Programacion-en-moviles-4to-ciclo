@@ -1,10 +1,13 @@
 package com.abad.campusgps.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,20 +27,31 @@ fun FiltroCategorias(
     onSeleccionarCategoria: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(
-            items = CATEGORIAS,
-            key = { it.second }
-        ) { (valor, etiqueta) ->
-            val estaSeleccionado = categoriaSeleccionada == valor
+    OpcionesFiltro(CATEGORIAS, categoriaSeleccionada, onSeleccionarCategoria, modifier)
+}
 
+@Composable
+internal fun <T> OpcionesFiltro(
+    opciones: List<Pair<T, String>>,
+    seleccion: T,
+    onSeleccionar: (T) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colores = MaterialTheme.colorScheme
+    Row(
+        modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        opciones.forEach { (valor, etiqueta) ->
             FilterChip(
-                selected = estaSeleccionado,
-                onClick = { onSeleccionarCategoria(valor) },
-                label = { Text(etiqueta) }
+                selected = seleccion == valor,
+                onClick = { onSeleccionar(valor) },
+                label = { Text(etiqueta, maxLines = 1, softWrap = false) },
+                shape = MaterialTheme.shapes.medium,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = colores.primary,
+                    selectedLabelColor = colores.onPrimary
+                )
             )
         }
     }
