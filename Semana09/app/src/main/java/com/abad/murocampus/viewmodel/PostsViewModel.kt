@@ -39,6 +39,15 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
     private val _refrescando = MutableStateFlow(false)
     val refrescando: StateFlow<Boolean> = _refrescando.asStateFlow()
 
+    private val _borrando = MutableStateFlow(false)
+    val borrando: StateFlow<Boolean> = _borrando.asStateFlow()
+
+    private val _postBorrado = MutableStateFlow<Int?>(null)
+    val postBorrado: StateFlow<Int?> = _postBorrado.asStateFlow()
+
+    private val _mensaje = MutableStateFlow<String?>(null)
+    val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
+
     private val _busqueda = MutableStateFlow("")
     val busqueda: StateFlow<String> = _busqueda.asStateFlow()
 
@@ -98,6 +107,35 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     fun reiniciarPublicacion() {
         _publicacion.value = null
+    }
+
+    fun borrar(id: Int) {
+        viewModelScope.launch {
+            _borrando.value = true
+            repo.borrar(id)
+                .onSuccess { codigo ->
+                    quitarDeLaLista(id)
+                    _mensaje.value = "Publicación #$id eliminada (código $codigo)"
+                    _postBorrado.value = id
+                }
+                .onFailure { _mensaje.value = "No se pudo eliminar: ${mensajeDe(it)}" }
+            _borrando.value = false
+        }
+    }
+
+    fun borradoAtendido() {
+        _postBorrado.value = null
+    }
+
+    fun mensajeMostrado() {
+        _mensaje.value = null
+    }
+
+    private fun quitarDeLaLista(id: Int) {
+        val actual = _lista.value
+        if (actual is UiState.Exito) {
+            _lista.value = UiState.Exito(actual.datos.filterNot { it.id == id })
+        }
     }
 
     fun abrir(id: Int) {

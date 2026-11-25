@@ -61,6 +61,7 @@ fun PantallaLista(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { AvisosSnackbar(vm) },
         topBar = {
             LargeTopAppBar(
                 title = { Text("MuroCampus") },

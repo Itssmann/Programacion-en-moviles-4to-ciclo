@@ -20,7 +20,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Comment
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,18 +62,58 @@ fun PantallaDetalle(
     onVolver: () -> Unit
 ) {
     val estado by vm.detalle.collectAsStateWithLifecycle()
+    val borrando by vm.borrando.collectAsStateWithLifecycle()
+    val postBorrado by vm.postBorrado.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    var confirmarBorrado by rememberSaveable { mutableStateOf(false) }
 
     BackHandler { onVolver() }
 
+    LaunchedEffect(postBorrado) {
+        if (postBorrado == idPost) {
+            vm.borradoAtendido()
+            onVolver()
+        }
+    }
+
+    if (confirmarBorrado) {
+        DialogoBorrar(
+            idPost = idPost,
+            onConfirmar = {
+                confirmarBorrado = false
+                vm.borrar(idPost)
+            },
+            onCancelar = { confirmarBorrado = false }
+        )
+    }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { AvisosSnackbar(vm) },
         topBar = {
             TopAppBar(
                 title = { Text("Publicación #$idPost") },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    if (borrando) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else if (estado is UiState.Exito) {
+                        IconButton(onClick = { confirmarBorrado = true }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = "Eliminar publicación",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -85,6 +135,32 @@ fun PantallaDetalle(
             is UiState.Exito -> ContenidoDetalle(e.datos, modifier)
         }
     }
+}
+
+@Composable
+private fun DialogoBorrar(idPost: Int, onConfirmar: () -> Unit, onCancelar: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        icon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
+        title = { Text("¿Eliminar publicación?") },
+        text = {
+            Text("La publicación #$idPost y sus comentarios dejarán de verse en tu muro.")
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirmar,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
+            ) {
+                Text("Eliminar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar) { Text("Cancelar") }
+        }
+    )
 }
 
 @Composable

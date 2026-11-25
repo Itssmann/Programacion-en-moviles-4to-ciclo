@@ -30,9 +30,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.abad.murocampus.viewmodel.PostsViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -158,6 +164,19 @@ fun resaltarTexto(texto: String, buscado: String, fondo: Color): AnnotatedString
         }
         append(texto.substring(inicio))
     }
+}
+
+@Composable
+fun AvisosSnackbar(vm: PostsViewModel) {
+    val mensaje by vm.mensaje.collectAsStateWithLifecycle()
+    val estadoSnackbar = remember { SnackbarHostState() }
+    LaunchedEffect(mensaje) {
+        mensaje?.let {
+            estadoSnackbar.showSnackbar(it)
+            vm.mensajeMostrado()
+        }
+    }
+    SnackbarHost(estadoSnackbar)
 }
 
 @Composable
