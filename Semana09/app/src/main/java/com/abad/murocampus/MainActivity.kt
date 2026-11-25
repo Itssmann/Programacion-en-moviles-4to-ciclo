@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.abad.murocampus.data.PostRepositoryRemote
 import com.abad.murocampus.data.remote.RetrofitClient
+import com.abad.murocampus.ui.PantallaCrear
 import com.abad.murocampus.ui.PantallaDetalle
 import com.abad.murocampus.ui.PantallaLista
 import com.abad.murocampus.ui.theme.MuroCampusTheme
@@ -35,21 +36,26 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppMuroCampus(vm: PostsViewModel) {
     var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
+    var creando by rememberSaveable { mutableStateOf(false) }
 
     val id = idSeleccionado
-    if (id == null) {
-        PantallaLista(
+    when {
+        creando -> PantallaCrear(
+            vm = vm,
+            onVolver = { creando = false }
+        )
+        id != null -> PantallaDetalle(
+            vm = vm,
+            idPost = id,
+            onVolver = { idSeleccionado = null }
+        )
+        else -> PantallaLista(
             vm = vm,
             onAbrirPost = { nuevoId ->
                 idSeleccionado = nuevoId
                 vm.abrir(nuevoId)
-            }
-        )
-    } else {
-        PantallaDetalle(
-            vm = vm,
-            idPost = id,
-            onVolver = { idSeleccionado = null }
+            },
+            onCrear = { creando = true }
         )
     }
 }

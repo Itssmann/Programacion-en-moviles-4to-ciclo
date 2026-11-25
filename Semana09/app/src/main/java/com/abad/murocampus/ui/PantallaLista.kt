@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,7 +33,11 @@ import com.abad.murocampus.viewmodel.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaLista(vm: PostsViewModel, onAbrirPost: (Int) -> Unit) {
+fun PantallaLista(
+    vm: PostsViewModel,
+    onAbrirPost: (Int) -> Unit,
+    onCrear: () -> Unit
+) {
     val estado by vm.lista.collectAsStateWithLifecycle()
     val usuarioFiltro by vm.usuarioFiltro.collectAsStateWithLifecycle()
 
@@ -42,6 +50,15 @@ fun PantallaLista(vm: PostsViewModel, onAbrirPost: (Int) -> Unit) {
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onCrear,
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Nueva publicación")
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
@@ -100,7 +117,7 @@ private fun ListaPosts(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(posts, key = { it.id }) { post ->
