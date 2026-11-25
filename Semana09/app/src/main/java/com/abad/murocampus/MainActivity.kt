@@ -1,7 +1,9 @@
 package com.abad.murocampus
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
@@ -29,7 +31,7 @@ import com.abad.murocampus.viewmodel.PostsViewModelFactory
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         val factory = PostsViewModelFactory(PostRepositoryRemote(RetrofitClient.api))
         setContent {
             MuroCampusTheme {

@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.abad.murocampus.ui.theme.colorEncabezado
 import com.abad.murocampus.viewmodel.PostsViewModel
 import com.abad.murocampus.viewmodel.UiState
 
@@ -84,7 +85,9 @@ fun PantallaCrear(vm: PostsViewModel, onVolver: () -> Unit) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = colorEncabezado(),
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
                 )
             )
         }
@@ -112,7 +115,7 @@ fun PantallaCrear(vm: PostsViewModel, onVolver: () -> Unit) {
                         AvatarUsuario(1, tamano = 44.dp)
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("Usuario 1", style = MaterialTheme.typography.titleMedium)
+                            Text(nombreDe(1), style = MaterialTheme.typography.titleMedium)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Outlined.Public,

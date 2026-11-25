@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -77,7 +79,7 @@ fun AvatarUsuario(userId: Int, tamano: Dp = 44.dp) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "U$userId",
+            text = inicialesDe(userId),
             style = MaterialTheme.typography.labelLarge,
             color = colores.texto
         )
@@ -92,7 +94,8 @@ fun TarjetaPost(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     maxLineas: Int = 2,
-    resaltar: String = ""
+    resaltar: String = "",
+    idPost: Int? = null
 ) {
     val fondoResaltado = MaterialTheme.colorScheme.secondaryContainer
     Card(
@@ -102,17 +105,33 @@ fun TarjetaPost(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AvatarUsuario(userId, tamano = 36.dp)
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text = "Usuario $userId",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                AvatarUsuario(userId, tamano = 40.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = nombreDe(userId),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = "Comunidad MuroCampus",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (idPost != null) {
+                    Text(
+                        text = "#$idPost",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
             }
             Spacer(Modifier.height(14.dp))
             Text(
@@ -129,18 +148,33 @@ fun TarjetaPost(
                 maxLines = maxLineas,
                 overflow = TextOverflow.Ellipsis
             )
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Chat,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "Leer y comentar",
+                    text = "Ver conversación",
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "Leer",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -180,7 +214,7 @@ fun AvisosSnackbar(vm: PostsViewModel) {
 }
 
 @Composable
-fun ListaEsqueleto(modifier: Modifier = Modifier) {
+fun TarjetaEsqueleto(modifier: Modifier = Modifier) {
     val transicion = rememberInfiniteTransition(label = "esqueleto")
     val opacidad by transicion.animateFloat(
         initialValue = 0.4f,
@@ -188,23 +222,11 @@ fun ListaEsqueleto(modifier: Modifier = Modifier) {
         animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
         label = "opacidad"
     )
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .alpha(opacidad),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        userScrollEnabled = false
-    ) {
-        items(5) { TarjetaEsqueleto() }
-    }
-}
-
-@Composable
-private fun TarjetaEsqueleto() {
     val bloque = MaterialTheme.colorScheme.surfaceContainerHighest
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .alpha(opacidad),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest

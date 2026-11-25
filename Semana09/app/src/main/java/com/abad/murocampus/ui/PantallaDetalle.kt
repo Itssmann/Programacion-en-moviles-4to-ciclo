@@ -21,6 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import com.abad.murocampus.ui.theme.colorEncabezado
+import com.abad.murocampus.ui.theme.degradadoBajoBarra
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
@@ -129,7 +133,8 @@ fun PantallaDetalle(
                             modifier = Modifier
                                 .padding(12.dp)
                                 .size(24.dp),
-                            strokeWidth = 2.dp
+                            strokeWidth = 2.dp,
+                            color = Color.White
                         )
                     } else if (estado is UiState.Exito) {
                         IconButton(onClick = { mostrarEdicion = true }) {
@@ -139,15 +144,18 @@ fun PantallaDetalle(
                             Icon(
                                 imageVector = Icons.Outlined.Delete,
                                 contentDescription = "Eliminar publicación",
-                                tint = MaterialTheme.colorScheme.error
+                                tint = Color.White
                             )
                         }
                     }
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                    containerColor = colorEncabezado(),
+                    scrolledContainerColor = colorEncabezado(),
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         }
@@ -257,50 +265,77 @@ private fun DialogoBorrar(idPost: Int, onConfirmar: () -> Unit, onCancelar: () -
 private fun ContenidoDetalle(detalle: DetalleUi, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item { CabeceraPost(detalle.post) }
+        item { CuerpoPost(detalle.post) }
         item { TituloComentarios(detalle.comentarios.size) }
         items(detalle.comentarios, key = { it.id }) { comentario ->
-            TarjetaComentario(comentario)
+            Box(Modifier.padding(horizontal = 16.dp)) { TarjetaComentario(comentario) }
         }
     }
 }
 
 @Composable
 private fun CabeceraPost(post: Post) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                brush = degradadoBajoBarra(),
+                shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+            )
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(Color.White.copy(alpha = 0.25f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                AvatarUsuario(post.userId, tamano = 48.dp)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = nombreDe(post.userId),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+                Text(
+                    text = "Publicó en el muro del campus",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = post.title.replaceFirstChar { it.uppercase() },
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+private fun CuerpoPost(post: Post) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AvatarUsuario(post.userId, tamano = 48.dp)
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text("Usuario ${post.userId}", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = "Miembro de MuroCampus",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Spacer(Modifier.height(20.dp))
+        Column(modifier = Modifier.padding(22.dp)) {
             Text(
-                text = post.title.replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = post.body,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = post.body.replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.bodyLarge
             )
         }
     }
@@ -309,7 +344,7 @@ private fun CabeceraPost(post: Post) {
 @Composable
 private fun TituloComentarios(cantidad: Int) {
     Row(
-        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 4.dp),
+        modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
