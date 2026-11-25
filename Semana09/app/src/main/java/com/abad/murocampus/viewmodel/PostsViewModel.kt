@@ -10,8 +10,11 @@ import com.abad.murocampus.model.Post
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class DetalleUi(
@@ -35,6 +38,18 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     private val _refrescando = MutableStateFlow(false)
     val refrescando: StateFlow<Boolean> = _refrescando.asStateFlow()
+
+    private val _busqueda = MutableStateFlow("")
+    val busqueda: StateFlow<String> = _busqueda.asStateFlow()
+
+    val listaVisible: StateFlow<UiState<List<Post>>> =
+        combine(_lista, _busqueda) { estado, texto ->
+            if (estado is UiState.Exito && texto.isNotBlank()) {
+                UiState.Exito(estado.datos.filter { it.title.contains(texto.trim(), ignoreCase = true) })
+            } else {
+                estado
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState.Cargando)
 
     private var cargaLista: Job? = null
 
@@ -60,6 +75,10 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
                 _refrescando.value = false
             }
         }
+    }
+
+    fun buscar(texto: String) {
+        _busqueda.value = texto
     }
 
     fun filtrar(userId: Int?) {

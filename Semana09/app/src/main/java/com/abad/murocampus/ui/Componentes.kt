@@ -39,6 +39,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -81,8 +85,10 @@ fun TarjetaPost(
     cuerpo: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    maxLineas: Int = 2
+    maxLineas: Int = 2,
+    resaltar: String = ""
 ) {
+    val fondoResaltado = MaterialTheme.colorScheme.secondaryContainer
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
@@ -104,7 +110,7 @@ fun TarjetaPost(
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                text = titulo.replaceFirstChar { it.uppercase() },
+                text = resaltarTexto(titulo.replaceFirstChar { it.uppercase() }, resaltar, fondoResaltado),
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -133,6 +139,24 @@ fun TarjetaPost(
                 )
             }
         }
+    }
+}
+
+fun resaltarTexto(texto: String, buscado: String, fondo: Color): AnnotatedString {
+    val palabra = buscado.trim()
+    if (palabra.isEmpty()) return AnnotatedString(texto)
+    return buildAnnotatedString {
+        var inicio = 0
+        while (true) {
+            val posicion = texto.indexOf(palabra, inicio, ignoreCase = true)
+            if (posicion < 0) break
+            append(texto.substring(inicio, posicion))
+            withStyle(SpanStyle(background = fondo)) {
+                append(texto.substring(posicion, posicion + palabra.length))
+            }
+            inicio = posicion + palabra.length
+        }
+        append(texto.substring(inicio))
     }
 }
 
