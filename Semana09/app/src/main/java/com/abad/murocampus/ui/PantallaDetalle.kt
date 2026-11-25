@@ -20,8 +20,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Comment
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -66,6 +71,26 @@ fun PantallaDetalle(
     val postBorrado by vm.postBorrado.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     var confirmarBorrado by rememberSaveable { mutableStateOf(false) }
+    var mostrarEdicion by rememberSaveable { mutableStateOf(false) }
+    val editando by vm.editando.collectAsStateWithLifecycle()
+    val edicionTerminada by vm.edicionTerminada.collectAsStateWithLifecycle()
+
+    LaunchedEffect(edicionTerminada) {
+        if (edicionTerminada) {
+            mostrarEdicion = false
+            vm.edicionAtendida()
+        }
+    }
+
+    val detalleActual = estado
+    if (mostrarEdicion && detalleActual is UiState.Exito) {
+        HojaEditarTitulo(
+            tituloActual = detalleActual.datos.post.title,
+            guardando = editando,
+            onGuardar = { vm.editarTitulo(idPost, it) },
+            onCerrar = { mostrarEdicion = false }
+        )
+    }
 
     BackHandler { onVolver() }
 
@@ -107,6 +132,9 @@ fun PantallaDetalle(
                             strokeWidth = 2.dp
                         )
                     } else if (estado is UiState.Exito) {
+                        IconButton(onClick = { mostrarEdicion = true }) {
+                            Icon(Icons.Outlined.Edit, contentDescription = "Editar título")
+                        }
                         IconButton(onClick = { confirmarBorrado = true }) {
                             Icon(
                                 imageVector = Icons.Outlined.Delete,
@@ -133,6 +161,68 @@ fun PantallaDetalle(
                 modifier = modifier
             )
             is UiState.Exito -> ContenidoDetalle(e.datos, modifier)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HojaEditarTitulo(
+    tituloActual: String,
+    guardando: Boolean,
+    onGuardar: (String) -> Unit,
+    onCerrar: () -> Unit
+) {
+    var titulo by rememberSaveable { mutableStateOf(tituloActual) }
+    val cambio = titulo.isNotBlank() && titulo.trim() != tituloActual
+
+    ModalBottomSheet(
+        onDismissRequest = onCerrar,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Editar título", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = "Solo se envía el título con PATCH; el contenido no cambia.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = titulo,
+                onValueChange = { titulo = it },
+                label = { Text("Nuevo título") },
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onCerrar) { Text("Cancelar") }
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { onGuardar(titulo.trim()) },
+                    enabled = cambio && !guardando
+                ) {
+                    if (guardando) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(if (guardando) "Guardando..." else "Guardar")
+                }
+            }
         }
     }
 }

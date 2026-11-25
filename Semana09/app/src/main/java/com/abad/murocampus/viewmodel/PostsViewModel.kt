@@ -45,6 +45,12 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
     private val _postBorrado = MutableStateFlow<Int?>(null)
     val postBorrado: StateFlow<Int?> = _postBorrado.asStateFlow()
 
+    private val _editando = MutableStateFlow(false)
+    val editando: StateFlow<Boolean> = _editando.asStateFlow()
+
+    private val _edicionTerminada = MutableStateFlow(false)
+    val edicionTerminada: StateFlow<Boolean> = _edicionTerminada.asStateFlow()
+
     private val _mensaje = MutableStateFlow<String?>(null)
     val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
 
@@ -120,6 +126,35 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
                 }
                 .onFailure { _mensaje.value = "No se pudo eliminar: ${mensajeDe(it)}" }
             _borrando.value = false
+        }
+    }
+
+    fun editarTitulo(id: Int, nuevoTitulo: String) {
+        viewModelScope.launch {
+            _editando.value = true
+            repo.editarTitulo(id, nuevoTitulo)
+                .onSuccess { respuesta ->
+                    reemplazarPost(respuesta)
+                    _mensaje.value = "Título actualizado. El servidor respondió: \"${respuesta.title}\""
+                    _edicionTerminada.value = true
+                }
+                .onFailure { _mensaje.value = "No se pudo editar: ${mensajeDe(it)}" }
+            _editando.value = false
+        }
+    }
+
+    fun edicionAtendida() {
+        _edicionTerminada.value = false
+    }
+
+    private fun reemplazarPost(nuevo: Post) {
+        val detalleActual = _detalle.value
+        if (detalleActual is UiState.Exito && detalleActual.datos.post.id == nuevo.id) {
+            _detalle.value = UiState.Exito(detalleActual.datos.copy(post = nuevo))
+        }
+        val listaActual = _lista.value
+        if (listaActual is UiState.Exito) {
+            _lista.value = UiState.Exito(listaActual.datos.map { if (it.id == nuevo.id) nuevo else it })
         }
     }
 

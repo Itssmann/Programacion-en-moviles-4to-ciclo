@@ -1,5 +1,6 @@
 package com.abad.murocampus.data.remote
 
+import com.abad.murocampus.model.CambioTitulo
 import com.abad.murocampus.model.Comentario
 import com.abad.murocampus.model.NuevoPost
 import com.abad.murocampus.model.Post
@@ -7,6 +8,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -27,6 +29,9 @@ interface PostApi {
 
     @POST("posts")
     suspend fun crear(@Body nuevo: NuevoPost): Post
+
+    @PATCH("posts/{id}")
+    suspend fun editarTitulo(@Path("id") id: Int, @Body cambio: CambioTitulo): Post
 
     @DELETE("posts/{id}")
     suspend fun borrar(@Path("id") id: Int): Response<Unit>

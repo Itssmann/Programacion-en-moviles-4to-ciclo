@@ -1,6 +1,7 @@
 package com.abad.murocampus.data
 
 import com.abad.murocampus.data.remote.PostApi
+import com.abad.murocampus.model.CambioTitulo
 import com.abad.murocampus.model.Comentario
 import com.abad.murocampus.model.NuevoPost
 import com.abad.murocampus.model.Post
@@ -14,6 +15,7 @@ interface PostRepository {
     suspend fun porUsuario(userId: Int): Result<List<Post>>
     suspend fun crear(nuevo: NuevoPost): Result<Post>
     suspend fun borrar(id: Int): Result<Int>
+    suspend fun editarTitulo(id: Int, titulo: String): Result<Post>
 }
 
 class PostRepositoryRemote(private val api: PostApi) : PostRepository {
@@ -29,6 +31,9 @@ class PostRepositoryRemote(private val api: PostApi) : PostRepository {
         llamar { api.porUsuario(userId) }
 
     override suspend fun crear(nuevo: NuevoPost): Result<Post> = llamar { api.crear(nuevo) }
+
+    override suspend fun editarTitulo(id: Int, titulo: String): Result<Post> =
+        llamar { api.editarTitulo(id, CambioTitulo(titulo)) }
 
     override suspend fun borrar(id: Int): Result<Int> = llamar {
         val respuesta = api.borrar(id)
