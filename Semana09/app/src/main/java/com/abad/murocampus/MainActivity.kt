@@ -4,7 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,29 +40,55 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+sealed interface Pantalla {
+    data object Lista : Pantalla
+    data class Detalle(val id: Int) : Pantalla
+    data object Crear : Pantalla
+}
+
 @Composable
 fun AppMuroCampus(vm: PostsViewModel) {
     var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
     var creando by rememberSaveable { mutableStateOf(false) }
+    val estadoGuardado = rememberSaveableStateHolder()
 
     val id = idSeleccionado
-    when {
-        creando -> PantallaCrear(
-            vm = vm,
-            onVolver = { creando = false }
-        )
-        id != null -> PantallaDetalle(
-            vm = vm,
-            idPost = id,
-            onVolver = { idSeleccionado = null }
-        )
-        else -> PantallaLista(
-            vm = vm,
-            onAbrirPost = { nuevoId ->
-                idSeleccionado = nuevoId
-                vm.abrir(nuevoId)
-            },
-            onCrear = { creando = true }
-        )
+    val pantalla: Pantalla = when {
+        creando -> Pantalla.Crear
+        id != null -> Pantalla.Detalle(id)
+        else -> Pantalla.Lista
+    }
+
+    AnimatedContent(
+        targetState = pantalla,
+        transitionSpec = {
+            val haciaAdelante = targetState != Pantalla.Lista
+            val desplazamiento = if (haciaAdelante) 1 else -1
+            (slideInHorizontally { it / 4 * desplazamiento } + fadeIn())
+                .togetherWith(slideOutHorizontally { -it / 4 * desplazamiento } + fadeOut())
+        },
+        label = "navegacion"
+    ) { actual ->
+        when (actual) {
+            Pantalla.Crear -> PantallaCrear(
+                vm = vm,
+                onVolver = { creando = false }
+            )
+            is Pantalla.Detalle -> PantallaDetalle(
+                vm = vm,
+                idPost = actual.id,
+                onVolver = { idSeleccionado = null }
+            )
+            Pantalla.Lista -> estadoGuardado.SaveableStateProvider("lista") {
+                PantallaLista(
+                    vm = vm,
+                    onAbrirPost = { nuevoId ->
+                        idSeleccionado = nuevoId
+                        vm.abrir(nuevoId)
+                    },
+                    onCrear = { creando = true }
+                )
+            }
+        }
     }
 }

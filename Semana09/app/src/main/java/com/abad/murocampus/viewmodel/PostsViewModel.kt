@@ -33,21 +33,32 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
     private val _publicacion = MutableStateFlow<UiState<Post>?>(null)
     val publicacion: StateFlow<UiState<Post>?> = _publicacion.asStateFlow()
 
+    private val _refrescando = MutableStateFlow(false)
+    val refrescando: StateFlow<Boolean> = _refrescando.asStateFlow()
+
+    private var cargaLista: Job? = null
+
     init {
         cargar()
     }
 
-    private var cargaLista: Job? = null
+    fun cargar() = cargarLista(mostrarCarga = true)
 
-    fun cargar() {
+    fun refrescar() = cargarLista(mostrarCarga = false)
+
+    private fun cargarLista(mostrarCarga: Boolean) {
         cargaLista?.cancel()
         cargaLista = viewModelScope.launch {
-            _lista.value = UiState.Cargando
-            val userId = _usuarioFiltro.value
-            val resultado = if (userId == null) repo.listar() else repo.porUsuario(userId)
-            resultado
-                .onSuccess { _lista.value = UiState.Exito(it) }
-                .onFailure { _lista.value = UiState.Error(mensajeDe(it)) }
+            if (mostrarCarga) _lista.value = UiState.Cargando else _refrescando.value = true
+            try {
+                val userId = _usuarioFiltro.value
+                val resultado = if (userId == null) repo.listar() else repo.porUsuario(userId)
+                resultado
+                    .onSuccess { _lista.value = UiState.Exito(it) }
+                    .onFailure { _lista.value = UiState.Error(mensajeDe(it)) }
+            } finally {
+                _refrescando.value = false
+            }
         }
     }
 
