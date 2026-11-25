@@ -23,7 +23,7 @@ import com.abad.murocampus.viewmodel.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaLista(vm: PostsViewModel) {
+fun PantallaLista(vm: PostsViewModel, onAbrirPost: (Int) -> Unit) {
     val estado by vm.lista.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -45,13 +45,17 @@ fun PantallaLista(vm: PostsViewModel) {
                 onReintentar = { vm.cargar() },
                 modifier = modifier
             )
-            is UiState.Exito -> ListaPosts(e.datos, modifier)
+            is UiState.Exito -> ListaPosts(e.datos, onAbrirPost, modifier)
         }
     }
 }
 
 @Composable
-private fun ListaPosts(posts: List<Post>, modifier: Modifier = Modifier) {
+private fun ListaPosts(
+    posts: List<Post>,
+    onAbrirPost: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -62,7 +66,7 @@ private fun ListaPosts(posts: List<Post>, modifier: Modifier = Modifier) {
                 userId = post.userId,
                 titulo = post.title,
                 cuerpo = post.body,
-                onClick = { },
+                onClick = { onAbrirPost(post.id) },
                 maxLineas = 2
             )
         }

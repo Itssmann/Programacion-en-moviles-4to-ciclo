@@ -4,9 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.abad.murocampus.data.PostRepositoryRemote
 import com.abad.murocampus.data.remote.RetrofitClient
+import com.abad.murocampus.ui.PantallaDetalle
 import com.abad.murocampus.ui.PantallaLista
 import com.abad.murocampus.ui.theme.MuroCampusTheme
 import com.abad.murocampus.viewmodel.PostsViewModel
@@ -20,8 +26,30 @@ class MainActivity : ComponentActivity() {
         setContent {
             MuroCampusTheme {
                 val vm: PostsViewModel = viewModel(factory = factory)
-                PantallaLista(vm)
+                AppMuroCampus(vm)
             }
         }
+    }
+}
+
+@Composable
+fun AppMuroCampus(vm: PostsViewModel) {
+    var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    val id = idSeleccionado
+    if (id == null) {
+        PantallaLista(
+            vm = vm,
+            onAbrirPost = { nuevoId ->
+                idSeleccionado = nuevoId
+                vm.abrir(nuevoId)
+            }
+        )
+    } else {
+        PantallaDetalle(
+            vm = vm,
+            idPost = id,
+            onVolver = { idSeleccionado = null }
+        )
     }
 }
