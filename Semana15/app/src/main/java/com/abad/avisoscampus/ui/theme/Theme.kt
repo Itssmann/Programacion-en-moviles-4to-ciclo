@@ -1,33 +1,45 @@
 package com.abad.avisoscampus.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AzulSecundario,
-    secondary = AzulClaro
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = AzulCampus,
+// Paleta fija: no se usan colores dinámicos para conservar la identidad de la app
+private val EsquemaAvisos = lightColorScheme(
+    primary = AzulPrincipal,
     onPrimary = Color.White,
-    primaryContainer = AzulClaro,
+    primaryContainer = CelesteSuave,
+    onPrimaryContainer = AzulInstitucional,
     secondary = AzulSecundario,
-    background = FondoGeneral,
-    surface = ColorTarjeta
+    onSecondary = Color.White,
+    secondaryContainer = CelesteSuave,
+    onSecondaryContainer = AzulInstitucional,
+    tertiary = Turquesa,
+    onTertiary = Color.White,
+    background = Fondo,
+    onBackground = TextoPrincipal,
+    surface = Superficie,
+    onSurface = TextoPrincipal,
+    surfaceVariant = GrisSuave,
+    onSurfaceVariant = TextoSecundario,
+    surfaceContainerLowest = Superficie,
+    surfaceContainerLow = Superficie,
+    surfaceContainer = Superficie,
+    surfaceContainerHigh = Fondo,
+    surfaceContainerHighest = GrisSuave,
+    outline = Bordes,
+    outlineVariant = Bordes,
+    error = CoralError,
+    onError = Color.White,
+    errorContainer = CoralSuave,
+    onErrorContainer = Color(0xFF8E2A35)
 )
 
 @Composable
-fun AvisosCampusTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
+fun AvisosCampusTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+        colorScheme = EsquemaAvisos,
         typography = Typography,
         content = content
     )
