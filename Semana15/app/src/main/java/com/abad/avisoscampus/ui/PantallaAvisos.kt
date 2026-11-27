@@ -55,6 +55,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     val faltan by vm.faltan.collectAsState()
     val corriendo = faltan != null
     val escuchando by vm.escuchandoAvion.collectAsState()
+    val avisos by vm.avisos.collectAsState()
 
     val lanzador = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -156,7 +157,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                     Text("Escuchar el modo avión")
                 }
             }
-            // TODO Paso 7: HistorialAvisos(avisos)
+            HistorialAvisos(avisos)
         }
     }
 }
