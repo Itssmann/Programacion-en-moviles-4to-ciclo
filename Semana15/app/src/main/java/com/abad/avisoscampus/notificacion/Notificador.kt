@@ -1,12 +1,17 @@
 package com.abad.avisoscampus.notificacion
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.abad.avisoscampus.R
+import com.abad.avisoscampus.model.Aviso
 
 object Notificador {
     const val CANAL = "avisos"
@@ -32,5 +37,20 @@ object Notificador {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // TODO Paso 3: fun mostrar(context: Context, aviso: Aviso): Boolean
+    @SuppressLint("MissingPermission") // el permiso se comprueba antes con tienePermiso
+    fun mostrar(context: Context, aviso: Aviso): Boolean {
+        if (!tienePermiso(context)) return false
+
+        val notificacion = NotificationCompat.Builder(context, CANAL)
+            .setSmallIcon(R.drawable.ic_notificacion)
+            .setContentTitle(aviso.titulo)
+            .setContentText(aviso.texto)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        // Se usa el id del aviso para que cada notificación sea distinta
+        NotificationManagerCompat.from(context).notify(aviso.id, notificacion)
+        return true
+    }
 }
