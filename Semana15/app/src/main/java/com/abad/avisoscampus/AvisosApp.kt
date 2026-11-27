@@ -1,4 +1,12 @@
 package com.abad.avisoscampus
 
-// TODO Paso 1: crear la clase AvisosApp que herede de Application
-//   y en onCreate llame a Notificador.crearCanal(this)
+import android.app.Application
+import com.abad.avisoscampus.notificacion.Notificador
+
+class AvisosApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        // El canal se crea una sola vez, al iniciar la app
+        Notificador.crearCanal(this)
+    }
+}
