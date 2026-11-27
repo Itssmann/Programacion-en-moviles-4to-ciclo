@@ -1,4 +1,4 @@
-# AvisosCampus - Laboratorio de Notificaciones en Android (Semana 15 · Fase 1)
+# AvisosCampus - Laboratorio de Notificaciones en Android (Semana 15)
 
 ## 1. Información general
 - **Nombre del proyecto**: AvisosCampus
@@ -22,13 +22,15 @@ com.abad.avisoscampus
 ├── notificacion
 │   └── Notificador.kt            crearCanal, tienePermiso y mostrar
 ├── receiver
-│   └── ModoAvionReceiver.kt      escucha ACTION_AIRPLANE_MODE_CHANGED
+│   ├── ModoAvionReceiver.kt      escucha ACTION_AIRPLANE_MODE_CHANGED
+│   └── CargadorReceiver.kt       escucha POWER_CONNECTED / DISCONNECTED (Fase 2)
 ├── viewmodel
 │   ├── AvisosViewModel.kt
 │   └── AvisosViewModelFactory.kt
 └── ui
-    ├── PantallaAvisos.kt         tarjetas, permiso, receptor y eventos
-    ├── HistorialAvisos.kt        lista de avisos (lo más reciente arriba)
+    ├── PantallaAvisos.kt         tarjetas, permiso, receptores y eventos
+    ├── HistorialAvisos.kt        línea de tiempo de avisos (lo más reciente arriba)
+    ├── Componentes.kt            tarjeta, etiqueta, fila con switch y estilo por origen (Fase 2)
     └── theme
         ├── Color.kt
         ├── Theme.kt
@@ -125,3 +127,26 @@ La segunda reemplaza a la primera: Android actualiza la notificación existente 
 
 **5. ¿En qué casos usarías una notificación local y en cuáles una push de Firebase?**
 Local: cuando el aviso nace dentro del celular y la app ya sabe qué y cuándo avisar, sin internet: recordatorios, alarmas, fin de una descarga o de un temporizador, cambios del sistema como el modo avión. Push (Firebase Cloud Messaging): cuando el aviso nace en un servidor o depende de otras personas y debe llegar aunque la app esté cerrada: un mensaje nuevo de chat, una nota publicada por el docente, una oferta o una alerta enviada a muchos usuarios a la vez.
+
+---
+
+## 8. Fase 2 · Mejoras con IA (rama `con-ia`)
+
+| Mejora | Qué hace | Capas |
+| :--- | :--- | :--- |
+| Dos canales | Canal **Urgentes** (`IMPORTANCE_HIGH`, emergente) además de **Avisos**. El ViewModel marca el recordatorio como `urgente = true` | Model, Repository, ViewModel, Notificador |
+| Texto largo | `BigTextStyle`: al expandir la notificación se ve el texto con el origen y la hora | Notificador |
+| Receptor del cargador | `CargadorReceiver` con `ACTION_POWER_CONNECTED` / `ACTION_POWER_DISCONNECTED` y su propio switch, registrado y quitado en `DisposableEffect` | Receiver, ViewModel, View |
+| Rediseño Material 3 | Tema propio con paleta azul institucional (sin colores dinámicos), encabezado con subtítulo y resumen, tarjetas con ícono, anillo de cuenta regresiva animado, filas con switch e historial en línea de tiempo con color por origen | View (ui/ y theme/) |
+
+### Capturas de la Fase 2
+
+| Canales Avisos y Urgentes | Recordatorio emergente | Texto largo |
+| :---: | :---: | :---: |
+| ![Canales](capturas/06-canales-avisos-urgentes.png) | ![Emergente](capturas/07-recordatorio-emergente.png) | ![Texto largo](capturas/08-texto-largo.png) |
+
+| Cargador en el historial | Rediseño Material 3 |
+| :---: | :---: |
+| ![Cargador](capturas/09-cargador-historial.png) | ![Rediseño](capturas/10-rediseno-material3.png) |
+
+Los prompts usados, lo que respondió la IA y lo que cambié están en [PROMPTS.md](PROMPTS.md).
