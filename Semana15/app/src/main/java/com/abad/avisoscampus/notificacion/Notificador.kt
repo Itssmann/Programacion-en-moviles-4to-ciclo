@@ -72,6 +72,11 @@ object Notificador {
             .setSmallIcon(R.drawable.ic_notificacion)
             .setContentTitle(aviso.titulo)
             .setContentText(aviso.texto)
+            // Al expandir la notificación se ve el texto completo con la hora y el origen
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText("${aviso.texto}\nOrigen: ${aviso.origen.texto} · ${aviso.hora}")
+            )
             .setPriority(prioridad)
             .setContentIntent(pendiente)
             .setAutoCancel(true)
